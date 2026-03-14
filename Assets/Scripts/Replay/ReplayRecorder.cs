@@ -71,6 +71,42 @@ public class ReplayRecorder : MonoBehaviour
         _activeCertification = null;
     }
 
+
+
+    public bool RemoveReplay(RunReplayData replay, out string message)
+    {
+        message = string.Empty;
+        if (replay == null)
+        {
+            message = "Replay not found.";
+            return false;
+        }
+
+        bool removed = _runHistory.Remove(replay);
+        message = removed ? "Replay deleted." : "Replay not found.";
+        return removed;
+    }
+
+    public bool RemoveReplayAt(int index, out string message)
+    {
+        message = string.Empty;
+        if (index < 0 || index >= _runHistory.Count)
+        {
+            message = "Replay index is out of range.";
+            return false;
+        }
+
+        _runHistory.RemoveAt(index);
+        message = "Replay deleted.";
+        return true;
+    }
+
+    public void ClearReplayHistory()
+    {
+        _runHistory.Clear();
+        _certificationHistory.Clear();
+    }
+
     private void HandleBotSpawned(BotAgent bot)
     {
         _trackedBot = bot;

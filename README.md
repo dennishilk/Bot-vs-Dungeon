@@ -161,3 +161,18 @@ A dedicated mood/presentation pass has been added for Unity 6 with lightweight s
 See `Assets/Docs/ClassicDungeonAtmospherePass.md` for the full implementation plan and inspector setup.
 
 Retro-inspired art direction expansion (lighting/palette/material/UI/camera/VFX) is documented in `Assets/Docs/RetroDungeonVisualPassPlan.md`.
+
+## Standalone Desktop App Flow (Linux-Friendly)
+
+The project now includes an application-flow layer so players can use all major systems through in-game UI (no CLI workflow required):
+
+- boot -> main menu -> mode routing
+- profile selection and management
+- settings menus (audio/display/gameplay)
+- save/load/share UI workflows
+- replay browser mode with filtering and deletion
+- post-run result actions (replay/highlights/save/run again/menu)
+- player-facing error popup handling
+
+Integration/wiring guide:
+- `Assets/Docs/StandaloneAppFlowIntegration.md`
