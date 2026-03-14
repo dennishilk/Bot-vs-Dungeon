@@ -15,6 +15,7 @@ public class DungeonReport
 
     public Vector2IntSerializable mostLethalTile;
     public Vector2IntSerializable mostAvoidedTile;
+    public Vector2IntSerializable mostLearnedDangerousTile;
     public int learnedDangerousTileCount;
     public float freshSuccessRate;
     public float adaptiveSuccessRate;
@@ -39,6 +40,7 @@ public class DungeonReport
         {
             report.mostLethalTile = Vector2IntSerializable.From(adaptiveSummary.mostLethalTile);
             report.mostAvoidedTile = Vector2IntSerializable.From(adaptiveSummary.mostAvoidedTile);
+            report.mostLearnedDangerousTile = Vector2IntSerializable.From(adaptiveSummary.mostLearnedDangerousTile);
             report.learnedDangerousTileCount = adaptiveSummary.learnedDangerousTiles;
             report.freshSuccessRate = adaptiveSummary.preAdaptationSuccessRate;
             report.adaptiveSuccessRate = adaptiveSummary.postAdaptationSuccessRate;

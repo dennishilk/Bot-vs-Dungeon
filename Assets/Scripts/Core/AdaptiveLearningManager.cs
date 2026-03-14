@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using UnityEngine;
@@ -18,9 +19,26 @@ public class AdaptiveLearningSummaryData
     public int learnedDangerousTiles;
     public Vector2Int mostLethalTile;
     public Vector2Int mostAvoidedTile;
+    public Vector2Int mostLearnedDangerousTile;
     public float preAdaptationSuccessRate;
     public float postAdaptationSuccessRate;
     public float adaptiveImprovement;
+}
+
+[Serializable]
+public class AdaptiveLearningPersistenceData
+{
+    public List<DungeonLearningMemory> memories = new();
+    public List<AdaptiveOutcomeStat> freshOutcomeStats = new();
+    public List<AdaptiveOutcomeStat> adaptiveOutcomeStats = new();
+}
+
+[Serializable]
+public struct AdaptiveOutcomeStat
+{
+    public string dungeonId;
+    public int runs;
+    public int successes;
 }
 
 public class AdaptiveLearningManager : MonoBehaviour
@@ -29,6 +47,7 @@ public class AdaptiveLearningManager : MonoBehaviour
     [SerializeField] private AdaptiveRunMode runMode = AdaptiveRunMode.Adaptive;
     [SerializeField] private bool allowFreshRunsToRecordLearning;
     [SerializeField] private bool persistenceEnabled;
+    [SerializeField] private string persistenceFileName = "adaptive_learning_memory.json";
 
     [Header("Learning Weights")]
     [SerializeField] private float baseDeathLearningWeight = 3f;
@@ -45,11 +64,21 @@ public class AdaptiveLearningManager : MonoBehaviour
     [SerializeField] private float panicLearningMultiplier = 1.65f;
 
     private readonly Dictionary<string, DungeonLearningMemory> _memoryByDungeon = new();
-    private readonly Dictionary<string, int> _freshRunOutcomes = new();
-    private readonly Dictionary<string, int> _adaptiveRunOutcomes = new();
+    private readonly Dictionary<string, AdaptiveOutcomeStat> _freshRunOutcomes = new();
+    private readonly Dictionary<string, AdaptiveOutcomeStat> _adaptiveRunOutcomes = new();
 
     public AdaptiveRunMode CurrentRunMode => runMode;
     public bool IsAdaptiveModeEnabled => runMode == AdaptiveRunMode.Adaptive;
+
+    private string PersistencePath => Path.Combine(Application.persistentDataPath, persistenceFileName);
+
+    private void Awake()
+    {
+        if (persistenceEnabled)
+        {
+            LoadPersistedMemory();
+        }
+    }
 
     public void SetRunMode(bool adaptiveEnabled)
     {
@@ -198,18 +227,19 @@ public class AdaptiveLearningManager : MonoBehaviour
         DungeonLearningMemory memory = GetOrCreateMemory(dungeonId);
         memory.totalRunsObserved++;
 
-        if (adaptiveModeUsed)
+        Dictionary<string, AdaptiveOutcomeStat> target = adaptiveModeUsed ? _adaptiveRunOutcomes : _freshRunOutcomes;
+        target.TryGetValue(dungeonId, out AdaptiveOutcomeStat stat);
+        stat.dungeonId = dungeonId;
+        stat.runs++;
+        if (survived)
         {
-            _adaptiveRunOutcomes.TryGetValue(dungeonId, out int adaptiveCount);
-            _adaptiveRunOutcomes[dungeonId] = adaptiveCount + (survived ? 1 : 0);
-        }
-        else
-        {
-            _freshRunOutcomes.TryGetValue(dungeonId, out int freshCount);
-            _freshRunOutcomes[dungeonId] = freshCount + (survived ? 1 : 0);
+            stat.successes++;
         }
 
+        target[dungeonId] = stat;
+
         ApplyForgetfulness(memory);
+        PersistIfEnabled();
     }
 
     public AdaptiveLearningSummaryData BuildSummary(string dungeonId)
@@ -219,10 +249,8 @@ public class AdaptiveLearningManager : MonoBehaviour
             return new AdaptiveLearningSummaryData { dungeonId = dungeonId };
         }
 
-        int freshRuns = Mathf.Max(1, memory.totalRunsObserved / 2);
-        int adaptiveRuns = Mathf.Max(1, memory.totalRunsObserved - freshRuns);
-        float freshRate = _freshRunOutcomes.TryGetValue(dungeonId, out int freshSuccesses) ? (float)freshSuccesses / freshRuns : 0f;
-        float adaptiveRate = _adaptiveRunOutcomes.TryGetValue(dungeonId, out int adaptiveSuccesses) ? (float)adaptiveSuccesses / adaptiveRuns : 0f;
+        float freshRate = GetOutcomeRate(_freshRunOutcomes, dungeonId);
+        float adaptiveRate = GetOutcomeRate(_adaptiveRunOutcomes, dungeonId);
 
         return new AdaptiveLearningSummaryData
         {
@@ -231,10 +259,77 @@ public class AdaptiveLearningManager : MonoBehaviour
             learnedDangerousTiles = memory.LearnedDangerousTiles(1f),
             mostLethalTile = memory.GetMostLethalTile()?.Position ?? Vector2Int.zero,
             mostAvoidedTile = memory.GetMostAvoidedTile()?.Position ?? Vector2Int.zero,
+            mostLearnedDangerousTile = memory.GetMostDangerousLearnedTile()?.Position ?? Vector2Int.zero,
             preAdaptationSuccessRate = freshRate,
             postAdaptationSuccessRate = adaptiveRate,
             adaptiveImprovement = adaptiveRate - freshRate
         };
+    }
+
+    public AdaptiveLearningSummaryData BuildAggregateSummary(IEnumerable<string> dungeonIds)
+    {
+        if (dungeonIds == null)
+        {
+            return new AdaptiveLearningSummaryData();
+        }
+
+        AdaptiveLearningSummaryData aggregate = new();
+        float bestDanger = -1f;
+        int lethalDeaths = -1;
+        int avoidedCount = -1;
+        int freshRuns = 0;
+        int freshSuccesses = 0;
+        int adaptiveRuns = 0;
+        int adaptiveSuccesses = 0;
+
+        foreach (string dungeonId in dungeonIds.Where(id => !string.IsNullOrWhiteSpace(id)).Distinct())
+        {
+            if (!_memoryByDungeon.TryGetValue(dungeonId, out DungeonLearningMemory memory))
+            {
+                continue;
+            }
+
+            aggregate.observedRuns += memory.totalRunsObserved;
+            aggregate.learnedDangerousTiles += memory.LearnedDangerousTiles(1f);
+
+            AdaptiveTileMemory lethalTile = memory.GetMostLethalTile();
+            if (lethalTile != null && lethalTile.deathCount > lethalDeaths)
+            {
+                lethalDeaths = lethalTile.deathCount;
+                aggregate.mostLethalTile = lethalTile.Position;
+            }
+
+            AdaptiveTileMemory mostAvoided = memory.GetMostAvoidedTile();
+            if (mostAvoided != null && mostAvoided.avoidedCount > avoidedCount)
+            {
+                avoidedCount = mostAvoided.avoidedCount;
+                aggregate.mostAvoidedTile = mostAvoided.Position;
+            }
+
+            AdaptiveTileMemory mostDangerous = memory.GetMostDangerousLearnedTile();
+            if (mostDangerous != null && mostDangerous.learnedDangerModifier > bestDanger)
+            {
+                bestDanger = mostDangerous.learnedDangerModifier;
+                aggregate.mostLearnedDangerousTile = mostDangerous.Position;
+            }
+
+            if (_freshRunOutcomes.TryGetValue(dungeonId, out AdaptiveOutcomeStat freshStat))
+            {
+                freshRuns += freshStat.runs;
+                freshSuccesses += freshStat.successes;
+            }
+
+            if (_adaptiveRunOutcomes.TryGetValue(dungeonId, out AdaptiveOutcomeStat adaptiveStat))
+            {
+                adaptiveRuns += adaptiveStat.runs;
+                adaptiveSuccesses += adaptiveStat.successes;
+            }
+        }
+
+        aggregate.preAdaptationSuccessRate = freshRuns > 0 ? (float)freshSuccesses / freshRuns : 0f;
+        aggregate.postAdaptationSuccessRate = adaptiveRuns > 0 ? (float)adaptiveSuccesses / adaptiveRuns : 0f;
+        aggregate.adaptiveImprovement = aggregate.postAdaptationSuccessRate - aggregate.preAdaptationSuccessRate;
+        return aggregate;
     }
 
     public IEnumerable<AdaptiveTileMemory> GetTileMemories(string dungeonId)
@@ -257,6 +352,7 @@ public class AdaptiveLearningManager : MonoBehaviour
         _memoryByDungeon.Remove(dungeonId);
         _freshRunOutcomes.Remove(dungeonId);
         _adaptiveRunOutcomes.Remove(dungeonId);
+        PersistIfEnabled();
     }
 
     public void ClearAllLearning()
@@ -264,6 +360,7 @@ public class AdaptiveLearningManager : MonoBehaviour
         _memoryByDungeon.Clear();
         _freshRunOutcomes.Clear();
         _adaptiveRunOutcomes.Clear();
+        PersistIfEnabled();
     }
 
     private DungeonLearningMemory GetOrCreateMemory(string dungeonId)
@@ -304,5 +401,78 @@ public class AdaptiveLearningManager : MonoBehaviour
     private bool ShouldRecordLearning()
     {
         return IsAdaptiveModeEnabled || allowFreshRunsToRecordLearning || persistenceEnabled;
+    }
+
+    private float GetOutcomeRate(Dictionary<string, AdaptiveOutcomeStat> outcomes, string dungeonId)
+    {
+        if (!outcomes.TryGetValue(dungeonId, out AdaptiveOutcomeStat stat) || stat.runs <= 0)
+        {
+            return 0f;
+        }
+
+        return (float)stat.successes / stat.runs;
+    }
+
+    private void PersistIfEnabled()
+    {
+        if (!persistenceEnabled)
+        {
+            return;
+        }
+
+        AdaptiveLearningPersistenceData data = new()
+        {
+            memories = _memoryByDungeon.Values.ToList(),
+            freshOutcomeStats = _freshRunOutcomes.Values.ToList(),
+            adaptiveOutcomeStats = _adaptiveRunOutcomes.Values.ToList()
+        };
+
+        string json = JsonUtility.ToJson(data, true);
+        File.WriteAllText(PersistencePath, json);
+    }
+
+    private void LoadPersistedMemory()
+    {
+        if (!File.Exists(PersistencePath))
+        {
+            return;
+        }
+
+        string json = File.ReadAllText(PersistencePath);
+        AdaptiveLearningPersistenceData data = JsonUtility.FromJson<AdaptiveLearningPersistenceData>(json);
+        if (data == null)
+        {
+            return;
+        }
+
+        _memoryByDungeon.Clear();
+        foreach (DungeonLearningMemory memory in data.memories ?? new List<DungeonLearningMemory>())
+        {
+            if (memory == null || string.IsNullOrWhiteSpace(memory.dungeonID))
+            {
+                continue;
+            }
+
+            memory.Initialize(memory.dungeonID);
+            _memoryByDungeon[memory.dungeonID] = memory;
+        }
+
+        _freshRunOutcomes.Clear();
+        foreach (AdaptiveOutcomeStat stat in data.freshOutcomeStats ?? new List<AdaptiveOutcomeStat>())
+        {
+            if (!string.IsNullOrWhiteSpace(stat.dungeonId))
+            {
+                _freshRunOutcomes[stat.dungeonId] = stat;
+            }
+        }
+
+        _adaptiveRunOutcomes.Clear();
+        foreach (AdaptiveOutcomeStat stat in data.adaptiveOutcomeStats ?? new List<AdaptiveOutcomeStat>())
+        {
+            if (!string.IsNullOrWhiteSpace(stat.dungeonId))
+            {
+                _adaptiveRunOutcomes[stat.dungeonId] = stat;
+            }
+        }
     }
 }

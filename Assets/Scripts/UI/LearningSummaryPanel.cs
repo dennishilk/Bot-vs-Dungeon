@@ -26,6 +26,9 @@ public class LearningSummaryPanel : MonoBehaviour
             $"Learned Dangerous Tiles: {summary.learnedDangerousTiles}\n" +
             $"Most Lethal Tile: ({summary.mostLethalTile.x}, {summary.mostLethalTile.y})\n" +
             $"Most Avoided Tile: ({summary.mostAvoidedTile.x}, {summary.mostAvoidedTile.y})\n" +
+            $"Most Learned-Dangerous Tile: ({summary.mostLearnedDangerousTile.x}, {summary.mostLearnedDangerousTile.y})\n" +
+            $"Fresh Success Rate: {(summary.preAdaptationSuccessRate * 100f):0}%\n" +
+            $"Adaptive Success Rate: {(summary.postAdaptationSuccessRate * 100f):0}%\n" +
             $"Success Improvement: {(summary.adaptiveImprovement * 100f):+0;-0;0}%";
     }
 
