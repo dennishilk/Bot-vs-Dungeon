@@ -19,6 +19,7 @@ namespace BotVsDungeon.UI
         [SerializeField] private StressTestPanel stressTestPanel;
         [SerializeField] private CampaignScreenController campaignScreenController;
         [SerializeField] private ProfilePanelController profilePanelController;
+        [SerializeField] private DirectorModePanel directorModePanel;
 
         [Header("Events")]
         [SerializeField] private UnityEvent onStartGame;
@@ -42,64 +43,49 @@ namespace BotVsDungeon.UI
                 return;
             }
 
-            if (uiController != null)
-            {
-                uiController.ShowHUD();
-            }
+            uiController?.ShowHUD();
         }
-
 
         public void OpenChallengeLevels()
         {
-            if (uiController != null)
-            {
-                uiController.ShowHUD();
-            }
+            uiController?.ShowHUD();
+            HideOptionalPanels();
         }
 
         public void OpenSandboxMode()
         {
-            if (uiController != null)
-            {
-                uiController.ShowHUD();
-            }
+            uiController?.ShowHUD();
+            HideOptionalPanels();
         }
-
 
         public void OpenDungeonBrowser()
         {
-            if (uiController != null)
-            {
-                uiController.ShowHUD();
-            }
-
+            uiController?.ShowHUD();
             dungeonBrowserPanel?.SetVisible(true);
             dailyChallengePanel?.SetVisible(false);
             stressTestPanel?.SetVisible(false);
+            campaignScreenController?.SetVisible(false);
+            directorModePanel?.SetVisible(false);
         }
 
         public void OpenDailyChallenge()
         {
-            if (uiController != null)
-            {
-                uiController.ShowHUD();
-            }
-
+            uiController?.ShowHUD();
             dungeonBrowserPanel?.SetVisible(false);
             dailyChallengePanel?.SetVisible(true);
             stressTestPanel?.SetVisible(false);
+            campaignScreenController?.SetVisible(false);
+            directorModePanel?.SetVisible(false);
         }
 
         public void OpenStressTest()
         {
-            if (uiController != null)
-            {
-                uiController.ShowHUD();
-            }
-
+            uiController?.ShowHUD();
             dungeonBrowserPanel?.SetVisible(false);
             dailyChallengePanel?.SetVisible(false);
             stressTestPanel?.SetVisible(true);
+            campaignScreenController?.SetVisible(false);
+            directorModePanel?.SetVisible(false);
         }
 
         public void OpenReplayViewer()
@@ -107,32 +93,36 @@ namespace BotVsDungeon.UI
             Debug.Log("Replay Viewer selected.");
         }
 
-        public void OpenCampaign()
+        public void OpenDirectorMode()
         {
-            if (uiController != null)
-            {
-                uiController.ShowHUD();
-            }
-
-            campaignScreenController?.SetVisible(true);
-            profilePanelController?.Refresh();
+            uiController?.ShowHUD();
+            directorModePanel?.SetVisible(true);
+            campaignScreenController?.SetVisible(false);
             dungeonBrowserPanel?.SetVisible(false);
             dailyChallengePanel?.SetVisible(false);
             stressTestPanel?.SetVisible(false);
         }
 
+        public void OpenCampaign()
+        {
+            uiController?.ShowHUD();
+            campaignScreenController?.SetVisible(true);
+            profilePanelController?.Refresh();
+            dungeonBrowserPanel?.SetVisible(false);
+            dailyChallengePanel?.SetVisible(false);
+            stressTestPanel?.SetVisible(false);
+            directorModePanel?.SetVisible(false);
+        }
+
         public void OpenProfile()
         {
-            if (uiController != null)
-            {
-                uiController.ShowHUD();
-            }
-
+            uiController?.ShowHUD();
             profilePanelController?.Refresh();
             campaignScreenController?.SetVisible(false);
             dungeonBrowserPanel?.SetVisible(false);
             dailyChallengePanel?.SetVisible(false);
             stressTestPanel?.SetVisible(false);
+            directorModePanel?.SetVisible(false);
         }
 
         public void QuitGame()
@@ -148,6 +138,15 @@ namespace BotVsDungeon.UI
         {
             onOpenSettingsPlaceholder?.Invoke();
             Debug.Log("Settings placeholder selected. No settings menu implemented.");
+        }
+
+        private void HideOptionalPanels()
+        {
+            dungeonBrowserPanel?.SetVisible(false);
+            dailyChallengePanel?.SetVisible(false);
+            stressTestPanel?.SetVisible(false);
+            campaignScreenController?.SetVisible(false);
+            directorModePanel?.SetVisible(false);
         }
     }
 }
