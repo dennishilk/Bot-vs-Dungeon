@@ -11,7 +11,12 @@ public class BotPathfinder : MonoBehaviour
         Vector2Int.left
     };
 
-    public List<Vector2Int> FindPath(ArenaManager arenaManager, Vector2Int start, Vector2Int goal)
+    [Header("Debug + Tuning")]
+    [SerializeField] private float dangerCostMultiplier = 1f;
+
+    public float LastPathDangerScore { get; private set; }
+
+    public List<Vector2Int> FindPath(ArenaManager arenaManager, Vector2Int start, Vector2Int goal, float personalityDangerMultiplier = 1f)
     {
         PriorityQueue<Vector2Int> open = new();
         Dictionary<Vector2Int, Vector2Int> cameFrom = new();
@@ -19,12 +24,15 @@ public class BotPathfinder : MonoBehaviour
 
         open.Enqueue(start, 0f);
         gScore[start] = 0f;
+        LastPathDangerScore = 0f;
 
         while (open.TryDequeue(out Vector2Int current))
         {
             if (current == goal)
             {
-                return Reconstruct(cameFrom, current);
+                List<Vector2Int> path = Reconstruct(cameFrom, current);
+                LastPathDangerScore = ComputePathDanger(arenaManager, path, personalityDangerMultiplier);
+                return path;
             }
 
             foreach (Vector2Int dir in Directions)
@@ -35,7 +43,8 @@ public class BotPathfinder : MonoBehaviour
                     continue;
                 }
 
-                float tentative = gScore[current] + 1f + arenaManager.GetDangerCost(next);
+                float danger = arenaManager.GetDangerCost(next) * dangerCostMultiplier * personalityDangerMultiplier;
+                float tentative = gScore[current] + 1f + danger;
                 if (!gScore.ContainsKey(next) || tentative < gScore[next])
                 {
                     gScore[next] = tentative;
@@ -47,6 +56,17 @@ public class BotPathfinder : MonoBehaviour
         }
 
         return new List<Vector2Int>();
+    }
+
+    private float ComputePathDanger(ArenaManager arenaManager, IEnumerable<Vector2Int> path, float personalityDangerMultiplier)
+    {
+        float score = 0f;
+        foreach (Vector2Int tile in path)
+        {
+            score += arenaManager.GetDangerCost(tile) * dangerCostMultiplier * personalityDangerMultiplier;
+        }
+
+        return score;
     }
 
     private static float Manhattan(Vector2Int a, Vector2Int b)

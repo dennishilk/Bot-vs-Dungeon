@@ -103,3 +103,17 @@ A focused UI/HUD pass is provided under `Assets/Scripts/UI` and `Assets/UI/Docs/
 - result banner controller for survive/died feedback
 
 This upgrade intentionally avoids adding new gameplay systems and only improves readability, menu flow, and thematic presentation.
+
+
+## Developer Debug Toolkit (AI Testing Lab)
+
+A built-in debugging toolkit is now available for in-game testing without terminal logs:
+
+- debug HUD overlay for live bot telemetry
+- simulation controls (spawn/run/reset/clear/pause/resume/slow-mo/step)
+- scrollable event log with clear + max count cap
+- gizmo visualizations for path, danger, goal, and current target
+- personality dropdown (`Careful`, `Balanced`, `Reckless`) for danger-cost testing
+- `TestArena` scene workflow and optional prebuilt layouts
+
+See `Assets/Docs/DebugToolkitSetup.md` for full setup and inspector wiring.

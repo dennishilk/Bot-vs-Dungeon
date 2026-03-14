@@ -40,6 +40,7 @@ public class BombTrap : TrapBase
                 continue;
             }
 
+            EventLogger.Instance?.Log("Bot entered bomb trap zone");
             _isArming = true;
             StartCoroutine(ArmAndExplode(bot));
             _hasExploded = true;
@@ -54,6 +55,7 @@ public class BombTrap : TrapBase
 
     private IEnumerator ArmAndExplode(BotHealth bot)
     {
+        EventLogger.Instance?.Log("Trap activated: bomb arming");
         AudioManager.Instance?.PlayTrapSound(SoundCue.BombArm);
 
         if (_blinkMaterial != null)
@@ -71,6 +73,7 @@ public class BombTrap : TrapBase
         explosionEffect?.PlayAt(transform.position + Vector3.up * 0.2f);
         AudioManager.Instance?.PlayTrapSound(SoundCue.BombExplosion);
         HandleBot(bot);
+        EventLogger.Instance?.Log($"Bot took {damage * 2f:0} damage");
 
         _isArming = false;
 
