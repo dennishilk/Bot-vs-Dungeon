@@ -24,7 +24,7 @@ public class ArrowProjectile : MonoBehaviour
         BotHealth bot = other.GetComponent<BotHealth>();
         if (bot != null)
         {
-            bot.TakeDamage(_damage);
+            bot.TakeDamage(_damage, DamageSource.ArcherTrap);
         }
 
         if (impactParticle != null)

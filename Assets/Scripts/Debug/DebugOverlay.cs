@@ -4,8 +4,11 @@ using UnityEngine;
 public class DebugOverlay : MonoBehaviour
 {
     [SerializeField] private SimulationManager simulationManager;
+    [SerializeField] private CertificationManager certificationManager;
     [SerializeField] private TMP_Text botHpText;
     [SerializeField] private TMP_Text botStateText;
+    [SerializeField] private TMP_Text personalityText;
+    [SerializeField] private TMP_Text certificationText;
     [SerializeField] private TMP_Text targetTileText;
     [SerializeField] private TMP_Text pathLengthText;
     [SerializeField] private TMP_Text currentTileText;
@@ -20,6 +23,10 @@ public class DebugOverlay : MonoBehaviour
 
         SetText(botHpText, $"Bot HP: {(health != null ? health.CurrentHp.ToString("0") : "-")}");
         SetText(botStateText, $"Bot State: {(bot != null ? bot.CurrentState.ToString() : "None")}");
+        SetText(personalityText, $"Personality: {(bot != null ? bot.GetPersonality().ToString() : "-")}");
+        SetText(certificationText, certificationManager != null && certificationManager.IsCertificationRunning
+            ? $"Certification Run: {certificationManager.CurrentRunIndex}/{certificationManager.TotalRunsInCertification}"
+            : "Certification Run: Idle");
         SetText(targetTileText, $"Current Target Tile: {(bot != null ? bot.CurrentTargetTile.ToString() : "-")}");
         SetText(pathLengthText, $"Current Path Length: {(bot != null ? bot.CurrentPath.Count.ToString() : "0")}");
         SetText(currentTileText, $"Current Tile Position: {(bot != null ? bot.CurrentTilePosition.ToString() : "-")}");

@@ -42,7 +42,7 @@ public class SawTrap : TrapBase
     public override void HandleBot(BotHealth botHealth)
     {
         EventLogger.Instance?.Log($"Trap activated: saw ({damage:0})");
-        botHealth.TakeDamage(damage);
+        botHealth.TakeDamage(damage, DamageSource.SawTrap);
         EventLogger.Instance?.Log($"Bot took {damage:0} damage");
 
         if (contactSpark != null)

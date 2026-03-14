@@ -16,12 +16,15 @@ public class SimulationManager : MonoBehaviour
     private BotAgent _activeBot;
     private float _simulationTime;
     private bool _isPaused;
+    private BotPersonality _activeRunPersonality;
+    private bool _updateUiForActiveRun = true;
 
     public bool IsSimulationRunning { get; private set; }
     public float SimulationTime => _simulationTime;
     public BotAgent ActiveBot => _activeBot;
 
     public event Action<BotAgent> OnBotSpawned;
+    public event Action<RunResult> OnRunFinished;
 
     private void Update()
     {
@@ -35,23 +38,38 @@ public class SimulationManager : MonoBehaviour
 
     public void StartSimulation()
     {
+        StartSimulationWithPersonality(defaultPersonality, true);
+    }
+
+    public bool StartSimulationWithPersonality(BotPersonality personality, bool updateUi)
+    {
         if (IsSimulationRunning)
         {
-            return;
+            return false;
         }
 
         if (!arenaManager.TryFindTile(TileType.Start, out Vector2Int startPos) ||
             !arenaManager.TryFindTile(TileType.Goal, out Vector2Int goalPos))
         {
-            uiController.SetStatus("Place both START and GOAL.");
-            return;
+            if (updateUi)
+            {
+                uiController.SetStatus("Place both START and GOAL.");
+            }
+            return false;
         }
 
         buildModeController.SetBuildMode(false);
         IsSimulationRunning = true;
         _isPaused = false;
         _simulationTime = 0f;
-        uiController.ClearResult();
+        _activeRunPersonality = personality;
+        _updateUiForActiveRun = updateUi;
+
+        if (updateUi)
+        {
+            uiController.ClearResult();
+            uiController.SetStatus($"Simulation running ({personality})...");
+        }
 
         Vector3 spawnPos = new(startPos.x, 0.6f, startPos.y);
         GameObject botObj = Instantiate(botPrefab, spawnPos, Quaternion.identity);
@@ -59,15 +77,15 @@ public class SimulationManager : MonoBehaviour
         _activeBot = botObj.GetComponent<BotAgent>();
         BotHealth health = botObj.GetComponent<BotHealth>();
 
-        _activeBot.SetPersonality(defaultPersonality);
+        _activeBot.SetPersonality(personality);
         _activeBot.Initialize(arenaManager, this, goalPos);
         health.OnBotDied += OnBotDied;
 
-        EventLogger.Instance?.Log("Bot spawned");
+        EventLogger.Instance?.Log($"Bot spawned ({personality})");
         OnBotSpawned?.Invoke(_activeBot);
 
         AudioManager.Instance?.PlayUISound(SoundCue.SimulationStart);
-        uiController.SetStatus("Simulation running...");
+        return true;
     }
 
     public void SpawnBot()
@@ -91,7 +109,7 @@ public class SimulationManager : MonoBehaviour
         EventLogger.Instance?.Log($"Bot personality: {personality}");
     }
 
-    public void StopSimulation(string result)
+    public void StopSimulation(string result, bool updateUi = true)
     {
         if (!IsSimulationRunning)
         {
@@ -102,6 +120,9 @@ public class SimulationManager : MonoBehaviour
         _isPaused = false;
         Time.timeScale = 1f;
 
+        RunResult runResult = BuildRunResult(result == "BOT SURVIVED");
+        OnRunFinished?.Invoke(runResult);
+
         if (_activeBot != null)
         {
             StartCoroutine(DestroyBotAfterDelay(_activeBot.gameObject, cleanupDelay));
@@ -110,11 +131,13 @@ public class SimulationManager : MonoBehaviour
 
         buildModeController.SetBuildMode(true);
 
-        bool success = result == "BOT SURVIVED";
-        uiController.SetStatus(result);
-        uiController.ShowResult(success);
-
-        AudioManager.Instance?.PlayResultSound(success ? SoundCue.ResultVictory : SoundCue.ResultFail);
+        if (updateUi)
+        {
+            bool success = runResult.survived;
+            uiController.SetStatus(result);
+            uiController.ShowResult(success);
+            AudioManager.Instance?.PlayResultSound(success ? SoundCue.ResultVictory : SoundCue.ResultFail);
+        }
     }
 
     public void ResetRun()
@@ -133,6 +156,7 @@ public class SimulationManager : MonoBehaviour
         }
 
         arenaManager.ClearAll();
+        DebugPathVisualizer.ClearPathHistory();
         EventLogger.Instance?.Log("Dungeon cleared");
     }
 
@@ -201,13 +225,62 @@ public class SimulationManager : MonoBehaviour
 
     private void OnBotDied(BotHealth _)
     {
-        StopSimulation("BOT DIED");
+        StopSimulation("BOT DIED", _updateUiForActiveRun);
     }
 
     public void OnBotReachedGoal()
     {
         goalFeedback?.PlaySuccessFeedback();
         AudioManager.Instance?.PlayResultSound(SoundCue.BotSuccess);
-        StopSimulation("BOT SURVIVED");
+        StopSimulation("BOT SURVIVED", _updateUiForActiveRun);
+    }
+
+    private RunResult BuildRunResult(bool survived)
+    {
+        RunResult runResult = new()
+        {
+            personality = _activeRunPersonality,
+            survived = survived,
+            completionTime = _simulationTime
+        };
+
+        if (_activeBot == null)
+        {
+            runResult.causeOfDeath = survived ? "None" : "Unknown";
+            return runResult;
+        }
+
+        BotHealth health = _activeBot.GetComponent<BotHealth>();
+        runResult.pathLength = _activeBot.TraversedPathLength;
+        runResult.remainingHP = health != null ? health.CurrentHp : 0f;
+
+        if (survived)
+        {
+            runResult.causeOfDeath = "None";
+            Vector2Int goalTile = _activeBot.CurrentTilePosition;
+            runResult.deathPosition = new Vector2(goalTile.x, goalTile.y);
+        }
+        else
+        {
+            Vector2Int tile = _activeBot.CurrentTilePosition;
+            runResult.deathPosition = new Vector2(tile.x, tile.y);
+            runResult.causeOfDeath = health != null ? MapDamageSource(health.LastDamageSource) : "Unknown";
+        }
+
+        DebugPathVisualizer.RecordPathHistory(runResult.personality, _activeBot.CurrentPath, survived);
+        return runResult;
+    }
+
+    private static string MapDamageSource(DamageSource source)
+    {
+        return source switch
+        {
+            DamageSource.SawTrap => "Saw Trap",
+            DamageSource.BombTrap => "Bomb Trap",
+            DamageSource.ArcherTrap => "Archer Trap",
+            DamageSource.PathFailure => "No Valid Path",
+            DamageSource.Multiple => "Multiple Damage Sources",
+            _ => "Unknown"
+        };
     }
 }

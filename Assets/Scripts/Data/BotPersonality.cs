@@ -2,5 +2,6 @@ public enum BotPersonality
 {
     Careful,
     Balanced,
-    Reckless
+    Reckless,
+    Panic
 }

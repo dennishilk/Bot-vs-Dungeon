@@ -16,7 +16,13 @@ public class BotPathfinder : MonoBehaviour
 
     public float LastPathDangerScore { get; private set; }
 
-    public List<Vector2Int> FindPath(ArenaManager arenaManager, Vector2Int start, Vector2Int goal, float personalityDangerMultiplier = 1f)
+    public List<Vector2Int> FindPath(
+        ArenaManager arenaManager,
+        Vector2Int start,
+        Vector2Int goal,
+        float personalityDangerMultiplier = 1f,
+        float adjacentTrapPenaltyMultiplier = 0f,
+        float deterministicNoiseWeight = 0f)
     {
         PriorityQueue<Vector2Int> open = new();
         Dictionary<Vector2Int, Vector2Int> cameFrom = new();
@@ -44,7 +50,10 @@ public class BotPathfinder : MonoBehaviour
                 }
 
                 float danger = arenaManager.GetDangerCost(next) * dangerCostMultiplier * personalityDangerMultiplier;
-                float tentative = gScore[current] + 1f + danger;
+                float adjacencyPenalty = GetAdjacentTrapCount(arenaManager, next) * adjacentTrapPenaltyMultiplier;
+                float noise = GetDeterministicTileNoise(next) * deterministicNoiseWeight;
+                float tentative = gScore[current] + 1f + danger + adjacencyPenalty + noise;
+
                 if (!gScore.ContainsKey(next) || tentative < gScore[next])
                 {
                     gScore[next] = tentative;
@@ -55,21 +64,11 @@ public class BotPathfinder : MonoBehaviour
             }
         }
 
+        LastPathDangerScore = 999f;
         return new List<Vector2Int>();
     }
 
-    private float ComputePathDanger(ArenaManager arenaManager, IEnumerable<Vector2Int> path, float personalityDangerMultiplier)
-    {
-        float score = 0f;
-        foreach (Vector2Int tile in path)
-        {
-            score += arenaManager.GetDangerCost(tile) * dangerCostMultiplier * personalityDangerMultiplier;
-        }
-
-        return score;
-    }
-
-    private static float Manhattan(Vector2Int a, Vector2Int b)
+    private static int Manhattan(Vector2Int a, Vector2Int b)
     {
         return Mathf.Abs(a.x - b.x) + Mathf.Abs(a.y - b.y);
     }
@@ -77,10 +76,9 @@ public class BotPathfinder : MonoBehaviour
     private static List<Vector2Int> Reconstruct(Dictionary<Vector2Int, Vector2Int> cameFrom, Vector2Int current)
     {
         List<Vector2Int> path = new() { current };
-
-        while (cameFrom.TryGetValue(current, out Vector2Int prev))
+        while (cameFrom.TryGetValue(current, out Vector2Int parent))
         {
-            current = prev;
+            current = parent;
             path.Add(current);
         }
 
@@ -88,39 +86,34 @@ public class BotPathfinder : MonoBehaviour
         return path;
     }
 
-    private class PriorityQueue<T>
+    private static float ComputePathDanger(ArenaManager arenaManager, List<Vector2Int> path, float personalityMultiplier)
     {
-        private readonly List<(T item, float priority)> _items = new();
-
-        public void Enqueue(T item, float priority)
+        float total = 0f;
+        foreach (Vector2Int tile in path)
         {
-            _items.Add((item, priority));
+            total += arenaManager.GetDangerCost(tile) * personalityMultiplier;
         }
 
-        public bool TryDequeue(out T item)
+        return total;
+    }
+
+    private static int GetAdjacentTrapCount(ArenaManager arenaManager, Vector2Int tile)
+    {
+        int count = 0;
+        foreach (Vector2Int dir in Directions)
         {
-            if (_items.Count == 0)
+            if (arenaManager.GetDangerCost(tile + dir) > 0f)
             {
-                item = default;
-                return false;
+                count++;
             }
-
-            int bestIndex = 0;
-            float bestPriority = _items[0].priority;
-            for (int i = 1; i < _items.Count; i++)
-            {
-                if (!(_items[i].priority < bestPriority))
-                {
-                    continue;
-                }
-
-                bestPriority = _items[i].priority;
-                bestIndex = i;
-            }
-
-            item = _items[bestIndex].item;
-            _items.RemoveAt(bestIndex);
-            return true;
         }
+
+        return count;
+    }
+
+    private static float GetDeterministicTileNoise(Vector2Int tile)
+    {
+        float hash = Mathf.Sin(tile.x * 12.9898f + tile.y * 78.233f) * 43758.5453f;
+        return Mathf.Abs(hash - Mathf.Floor(hash));
     }
 }
