@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -13,11 +14,14 @@ public class CertificationManager : MonoBehaviour
     [SerializeField] private float fairHpThreshold = 30f;
 
     private readonly List<RunResult> _runResults = new();
+
+    public event Action<DungeonReport, IReadOnlyList<RunResult>> OnCertificationCompleted;
     private int _trapActivationEstimate;
 
     public bool IsCertificationRunning { get; private set; }
     public int CurrentRunIndex { get; private set; }
     public int TotalRunsInCertification { get; private set; }
+    public DungeonReport LastReport { get; private set; }
 
     private void Awake()
     {
@@ -120,7 +124,9 @@ public class CertificationManager : MonoBehaviour
         }
 
         DungeonReport report = DungeonReport.Build(_runResults, _trapActivationEstimate, safeHpThreshold, fairHpThreshold);
+        LastReport = report;
         reportPanel?.ShowReport(report);
+        OnCertificationCompleted?.Invoke(report, _runResults.AsReadOnly());
         IsCertificationRunning = false;
         CurrentRunIndex = 0;
         TotalRunsInCertification = 0;

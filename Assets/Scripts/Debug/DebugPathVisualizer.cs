@@ -146,7 +146,7 @@ public class DebugPathVisualizer : MonoBehaviour
         Color baseColor = personality switch
         {
             BotPersonality.Careful => new Color(0.3f, 0.65f, 1f),
-            BotPersonality.Balanced => new Color(1f, 1f, 0.45f),
+            BotPersonality.Balanced => Color.white,
             BotPersonality.Reckless => new Color(1f, 0.35f, 0.35f),
             _ => new Color(0.8f, 0.45f, 1f)
         };

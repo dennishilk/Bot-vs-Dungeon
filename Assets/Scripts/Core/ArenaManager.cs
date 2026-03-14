@@ -13,6 +13,8 @@ public class ArenaManager : MonoBehaviour
 
     private readonly Dictionary<Vector2Int, TileEntry> _grid = new();
 
+    public event System.Action OnArenaChanged;
+
     public bool TryGetTile(Vector2Int gridPos, out TileEntry tile) => _grid.TryGetValue(gridPos, out tile);
 
     public void SetTile(Vector2Int gridPos, TileType tileType, GameObject instance, TrapBase trap = null)
@@ -24,6 +26,8 @@ public class ArenaManager : MonoBehaviour
             instance = instance,
             trap = trap
         };
+
+        OnArenaChanged?.Invoke();
     }
 
     public void RemoveTile(Vector2Int gridPos)
@@ -39,6 +43,7 @@ public class ArenaManager : MonoBehaviour
         }
 
         _grid.Remove(gridPos);
+        OnArenaChanged?.Invoke();
     }
 
     public void ClearAll()
@@ -52,6 +57,7 @@ public class ArenaManager : MonoBehaviour
         }
 
         _grid.Clear();
+        OnArenaChanged?.Invoke();
     }
 
     public IEnumerable<KeyValuePair<Vector2Int, TileEntry>> GetAllTiles()
