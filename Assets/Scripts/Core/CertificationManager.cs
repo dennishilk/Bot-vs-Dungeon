@@ -17,6 +17,7 @@ public class CertificationManager : MonoBehaviour
     [SerializeField] private string dungeonName = "Untitled Dungeon";
     [SerializeField] private DungeonSaveManager dungeonSaveManager;
     [SerializeField] private float resultScreenDelay = 0.25f;
+    [SerializeField] private bool adaptiveCertificationMode;
 
     private readonly List<RunResult> _runResults = new();
 
@@ -44,6 +45,11 @@ public class CertificationManager : MonoBehaviour
         {
             simulationManager.OnRunFinished -= HandleRunFinished;
         }
+    }
+
+    public void SetAdaptiveCertificationMode(bool enabled)
+    {
+        adaptiveCertificationMode = enabled;
     }
 
     public void StartCertificationRun()
@@ -87,6 +93,12 @@ public class CertificationManager : MonoBehaviour
             BotPersonality.Reckless
         };
 
+        if (adaptiveCertificationMode)
+        {
+            simulationManager?.SetAdaptiveMode(true);
+            simulationManager?.ResetCurrentDungeonLearning();
+        }
+
         foreach (BotPersonality personality in personalities)
         {
             CurrentRunIndex++;
@@ -99,6 +111,12 @@ public class CertificationManager : MonoBehaviour
                 runComplete = true;
             }
 
+            if (!adaptiveCertificationMode)
+            {
+                simulationManager?.SetAdaptiveMode(false);
+                simulationManager?.ResetCurrentDungeonLearning();
+            }
+
             simulationManager.OnRunFinished += OnFinished;
             bool started = simulationManager.StartSimulationWithPersonality(personality, false);
 
@@ -108,7 +126,7 @@ public class CertificationManager : MonoBehaviour
                 continue;
             }
 
-            EventLogger.Instance?.Log($"Certification run {CurrentRunIndex}/{TotalRunsInCertification}: {personality}");
+            EventLogger.Instance?.Log($"Certification run {CurrentRunIndex}/{TotalRunsInCertification}: {personality} (adaptive={adaptiveCertificationMode})");
             while (!runComplete)
             {
                 yield return null;
@@ -130,7 +148,8 @@ public class CertificationManager : MonoBehaviour
             yield return new WaitForSecondsRealtime(delayBetweenRuns);
         }
 
-        DungeonReport report = DungeonReport.Build(_runResults, _trapActivationEstimate, safeHpThreshold, fairHpThreshold);
+        AdaptiveLearningSummaryData adaptiveSummary = simulationManager != null ? simulationManager.GetLearningSummary() : null;
+        DungeonReport report = DungeonReport.Build(_runResults, _trapActivationEstimate, safeHpThreshold, fairHpThreshold, adaptiveSummary);
         LastReport = report;
         reportPanel?.ShowReport(report);
         if (resultScreenDelay > 0f)

@@ -12,16 +12,21 @@ public class SimulationManager : MonoBehaviour
     [SerializeField] private GoalFeedback goalFeedback;
     [SerializeField] private float cleanupDelay = 0.5f;
     [SerializeField] private BotPersonality defaultPersonality = BotPersonality.Balanced;
+    [SerializeField] private AdaptiveLearningManager adaptiveLearningManager;
+    [SerializeField] private bool adaptiveModeEnabled = true;
 
     private BotAgent _activeBot;
     private float _simulationTime;
     private bool _isPaused;
     private BotPersonality _activeRunPersonality;
     private bool _updateUiForActiveRun = true;
+    private string _activeDungeonId;
 
     public bool IsSimulationRunning { get; private set; }
     public float SimulationTime => _simulationTime;
     public BotAgent ActiveBot => _activeBot;
+    public bool AdaptiveModeEnabled => adaptiveModeEnabled;
+    public string ActiveDungeonId => _activeDungeonId;
 
     public event Action<BotAgent> OnBotSpawned;
     public event Action<RunResult> OnRunFinished;
@@ -58,6 +63,10 @@ public class SimulationManager : MonoBehaviour
             return false;
         }
 
+        _activeDungeonId = adaptiveLearningManager != null
+            ? adaptiveLearningManager.ComputeDungeonIdentifier(arenaManager)
+            : "runtime_dungeon";
+
         buildModeController.SetBuildMode(false);
         IsSimulationRunning = true;
         _isPaused = false;
@@ -78,7 +87,7 @@ public class SimulationManager : MonoBehaviour
         BotHealth health = botObj.GetComponent<BotHealth>();
 
         _activeBot.SetPersonality(personality);
-        _activeBot.Initialize(arenaManager, this, goalPos);
+        _activeBot.Initialize(arenaManager, this, goalPos, adaptiveLearningManager, _activeDungeonId, adaptiveModeEnabled);
         health.OnBotDied += OnBotDied;
 
         EventLogger.Instance?.Log($"Bot spawned ({personality})");
@@ -96,6 +105,30 @@ public class SimulationManager : MonoBehaviour
         }
 
         StartSimulation();
+    }
+
+    public void SetAdaptiveMode(bool enabled)
+    {
+        adaptiveModeEnabled = enabled;
+        adaptiveLearningManager?.SetRunMode(enabled);
+        EventLogger.Instance?.Log(enabled ? "Adaptive mode enabled" : "Fresh mode enabled");
+    }
+
+    public void ResetCurrentDungeonLearning()
+    {
+        string dungeonId = adaptiveLearningManager != null ? adaptiveLearningManager.ComputeDungeonIdentifier(arenaManager) : _activeDungeonId;
+        adaptiveLearningManager?.ClearCurrentDungeonLearning(dungeonId);
+    }
+
+    public void ResetAllLearning()
+    {
+        adaptiveLearningManager?.ClearAllLearning();
+    }
+
+    public AdaptiveLearningSummaryData GetLearningSummary()
+    {
+        string dungeonId = adaptiveLearningManager != null ? adaptiveLearningManager.ComputeDungeonIdentifier(arenaManager) : _activeDungeonId;
+        return adaptiveLearningManager != null ? adaptiveLearningManager.BuildSummary(dungeonId) : null;
     }
 
     public void SetBotPersonality(BotPersonality personality)
@@ -241,7 +274,9 @@ public class SimulationManager : MonoBehaviour
         {
             personality = _activeRunPersonality,
             survived = survived,
-            completionTime = _simulationTime
+            completionTime = _simulationTime,
+            dungeonId = _activeDungeonId,
+            usedAdaptiveMode = adaptiveModeEnabled
         };
 
         if (_activeBot == null)
@@ -265,6 +300,19 @@ public class SimulationManager : MonoBehaviour
             Vector2Int tile = _activeBot.CurrentTilePosition;
             runResult.deathPosition = new Vector2(tile.x, tile.y);
             runResult.causeOfDeath = health != null ? MapDamageSource(health.LastDamageSource) : "Unknown";
+        }
+
+        if (adaptiveLearningManager != null)
+        {
+            adaptiveLearningManager.RecordRunOutcome(_activeDungeonId, survived, adaptiveModeEnabled);
+            if (survived)
+            {
+                adaptiveLearningManager.RecordSuccessPath(_activeDungeonId, _activeBot.TraversedTiles, runResult.personality);
+            }
+            else
+            {
+                adaptiveLearningManager.RecordDeath(_activeDungeonId, _activeBot.CurrentTilePosition, runResult.personality);
+            }
         }
 
         DebugPathVisualizer.RecordPathHistory(runResult.personality, _activeBot.CurrentPath, survived);

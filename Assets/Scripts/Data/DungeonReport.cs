@@ -13,7 +13,19 @@ public class DungeonReport
     public string verdict;
     public List<RunResult> runResults = new();
 
-    public static DungeonReport Build(List<RunResult> runs, int trapActivations, float safeHpThreshold = 50f, float fairHpThreshold = 30f)
+    public Vector2IntSerializable mostLethalTile;
+    public Vector2IntSerializable mostAvoidedTile;
+    public int learnedDangerousTileCount;
+    public float freshSuccessRate;
+    public float adaptiveSuccessRate;
+    public float adaptiveImprovement;
+
+    public static DungeonReport Build(
+        List<RunResult> runs,
+        int trapActivations,
+        float safeHpThreshold = 50f,
+        float fairHpThreshold = 30f,
+        AdaptiveLearningSummaryData adaptiveSummary = null)
     {
         DungeonReport report = new();
         report.runResults = runs;
@@ -22,6 +34,16 @@ public class DungeonReport
         report.averageRemainingHP = report.totalRuns > 0 ? runs.Average(r => r.remainingHP) : 0f;
         report.averageCompletionTime = runs.Where(r => r.survived).Any() ? runs.Where(r => r.survived).Average(r => r.completionTime) : 0f;
         report.averagePathLength = report.totalRuns > 0 ? runs.Average(r => r.pathLength) : 0f;
+
+        if (adaptiveSummary != null)
+        {
+            report.mostLethalTile = Vector2IntSerializable.From(adaptiveSummary.mostLethalTile);
+            report.mostAvoidedTile = Vector2IntSerializable.From(adaptiveSummary.mostAvoidedTile);
+            report.learnedDangerousTileCount = adaptiveSummary.learnedDangerousTiles;
+            report.freshSuccessRate = adaptiveSummary.preAdaptationSuccessRate;
+            report.adaptiveSuccessRate = adaptiveSummary.postAdaptationSuccessRate;
+            report.adaptiveImprovement = adaptiveSummary.adaptiveImprovement;
+        }
 
         if (report.totalSurvivals == 3)
         {
@@ -45,5 +67,17 @@ public class DungeonReport
         }
 
         return report;
+    }
+}
+
+[System.Serializable]
+public struct Vector2IntSerializable
+{
+    public int x;
+    public int y;
+
+    public static Vector2IntSerializable From(UnityEngine.Vector2Int value)
+    {
+        return new Vector2IntSerializable { x = value.x, y = value.y };
     }
 }

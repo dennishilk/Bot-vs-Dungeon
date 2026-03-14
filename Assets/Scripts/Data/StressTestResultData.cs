@@ -11,4 +11,7 @@ public class StressTestResultData
     public float averagePathLength;
     public Vector2Int mostLethalTile;
     public string mostCommonCauseOfDeath;
+    public bool adaptiveModeUsed;
+    public string adaptiveLearningPool;
+    public AdaptiveLearningSummaryData learningSummary;
 }

@@ -10,6 +10,8 @@ public class RunResult
     public float remainingHP;
     public Vector2 deathPosition;
     public int pathLength;
+    public string dungeonId;
+    public bool usedAdaptiveMode;
 
     public string ToSummaryLine()
     {

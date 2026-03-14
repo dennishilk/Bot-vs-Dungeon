@@ -30,13 +30,17 @@ public class BotAgent : MonoBehaviour
     private SimulationManager _simulationManager;
     private BotPathfinder _pathfinder;
     private BotHealth _health;
+    private AdaptiveLearningManager _adaptiveLearningManager;
 
     private readonly List<Vector2Int> _path = new();
+    private readonly List<Vector2Int> _traversedTiles = new();
     private int _pathIndex;
     private Vector2Int _goalTile;
     private bool _panicTriggered;
     private float _manualUpdateInterval;
     private float _manualUpdateTimer;
+    private bool _useAdaptiveLearning;
+    private string _dungeonId;
 
     public event Action<BotAgent> OnGoalReached;
 
@@ -44,14 +48,25 @@ public class BotAgent : MonoBehaviour
     public string LastDecision { get; private set; } = "Idle";
     public float LastDangerScore { get; private set; }
     public IReadOnlyList<Vector2Int> CurrentPath => _path;
+    public IReadOnlyList<Vector2Int> TraversedTiles => _traversedTiles;
     public int TraversedPathLength => Mathf.Max(0, _pathIndex);
     public Vector2Int CurrentTilePosition => new(Mathf.RoundToInt(transform.position.x), Mathf.RoundToInt(transform.position.z));
     public Vector2Int CurrentTargetTile => _pathIndex >= 0 && _pathIndex < _path.Count ? _path[_pathIndex] : CurrentTilePosition;
+    public string DungeonId => _dungeonId;
 
     private void Awake()
     {
         _pathfinder = GetComponent<BotPathfinder>();
         _health = GetComponent<BotHealth>();
+        _health.OnBotDamaged += OnBotDamaged;
+    }
+
+    private void OnDestroy()
+    {
+        if (_health != null)
+        {
+            _health.OnBotDamaged -= OnBotDamaged;
+        }
     }
 
     public void SetPersonality(BotPersonality newPersonality)
@@ -65,13 +80,23 @@ public class BotAgent : MonoBehaviour
         return personality;
     }
 
-    public void Initialize(ArenaManager arenaManager, SimulationManager simulationManager, Vector2Int goal)
+    public void Initialize(
+        ArenaManager arenaManager,
+        SimulationManager simulationManager,
+        Vector2Int goal,
+        AdaptiveLearningManager adaptiveLearningManager = null,
+        string dungeonId = null,
+        bool useAdaptiveLearning = false)
     {
         _arenaManager = arenaManager;
         _simulationManager = simulationManager;
         _goalTile = goal;
         _panicTriggered = false;
         _manualUpdateTimer = 0f;
+        _adaptiveLearningManager = adaptiveLearningManager;
+        _dungeonId = dungeonId;
+        _useAdaptiveLearning = useAdaptiveLearning;
+        _traversedTiles.Clear();
         RecalculatePath();
     }
 
@@ -89,12 +114,31 @@ public class BotAgent : MonoBehaviour
         float noise = forcedNoise;
         float trapPenalty = GetAdjacentTrapPenaltyMultiplier();
         float danger = GetPersonalityDangerMultiplier();
+        BotLearningProfile profile = _adaptiveLearningManager != null
+            ? _adaptiveLearningManager.GetLearningProfile(personality)
+            : default;
 
-        _path.AddRange(_pathfinder.FindPath(_arenaManager, start, _goalTile, danger, trapPenalty, noise));
+        _path.AddRange(_pathfinder.FindPath(
+            _arenaManager,
+            start,
+            _goalTile,
+            danger,
+            trapPenalty,
+            noise,
+            _adaptiveLearningManager,
+            _dungeonId,
+            profile,
+            _useAdaptiveLearning));
+
         _pathIndex = 0;
         CurrentState = BotState.Pathing;
         LastDangerScore = _pathfinder.LastPathDangerScore;
         LastDecision = _path.Count > 0 ? "Path calculated" : "No path found";
+
+        if (_adaptiveLearningManager != null)
+        {
+            _adaptiveLearningManager.RecordPathAvoidance(_dungeonId, _path);
+        }
 
         EventLogger.Instance?.Log($"Path calculated ({personality}) len={_path.Count} danger={LastDangerScore:0.0}");
 
@@ -156,6 +200,11 @@ public class BotAgent : MonoBehaviour
             return;
         }
 
+        if (_traversedTiles.Count == 0 || _traversedTiles[_traversedTiles.Count - 1] != targetTile)
+        {
+            _traversedTiles.Add(targetTile);
+        }
+
         _pathIndex++;
         LastDecision = $"Reached {targetTile}";
 
@@ -189,5 +238,15 @@ public class BotAgent : MonoBehaviour
             BotPersonality.Panic => panicAdjacentTrapPenalty,
             _ => balancedAdjacentTrapPenalty
         };
+    }
+
+    private void OnBotDamaged(float amount, float _)
+    {
+        if (_adaptiveLearningManager == null)
+        {
+            return;
+        }
+
+        _adaptiveLearningManager.RecordDamage(_dungeonId, CurrentTilePosition, amount, personality);
     }
 }

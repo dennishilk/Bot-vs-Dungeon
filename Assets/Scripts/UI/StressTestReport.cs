@@ -23,7 +23,10 @@ public class StressTestReport : MonoBehaviour
                 $"Average Survival Time: {data.averageSurvivalTime:0.00}s\n" +
                 $"Average Path Length: {data.averagePathLength:0.0}\n" +
                 $"Most Lethal Tile: ({data.mostLethalTile.x}, {data.mostLethalTile.y})\n" +
-                $"Most Common Cause of Death: {data.mostCommonCauseOfDeath}";
+                $"Most Common Cause of Death: {data.mostCommonCauseOfDeath}\n\n" +
+                $"Adaptive Mode: {(data.adaptiveModeUsed ? "On" : "Off")}\n" +
+                $"Learning Pool: {data.adaptiveLearningPool}\n" +
+                $"Learned Dangerous Tiles: {(data.learningSummary != null ? data.learningSummary.learnedDangerousTiles : 0)}";
         }
     }
 
