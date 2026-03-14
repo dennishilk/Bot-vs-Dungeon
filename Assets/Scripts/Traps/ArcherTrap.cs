@@ -1,10 +1,26 @@
+using System.Collections;
 using UnityEngine;
 
 public class ArcherTrap : TrapBase
 {
     [SerializeField] private float shootInterval = 1.25f;
     [SerializeField] private float range = 6f;
+    [SerializeField] private ArrowProjectile arrowProjectilePrefab;
+    [SerializeField] private Transform muzzlePoint;
+    [SerializeField] private Transform archerVisual;
+    [SerializeField] private float recoilDistance = 0.08f;
+    [SerializeField] private float recoilDuration = 0.06f;
+
     private float _nextShotTime;
+    private Vector3 _visualLocalStart;
+
+    private void Awake()
+    {
+        if (archerVisual != null)
+        {
+            _visualLocalStart = archerVisual.localPosition;
+        }
+    }
 
     private void Update()
     {
@@ -29,6 +45,30 @@ public class ArcherTrap : TrapBase
 
     public override void HandleBot(BotHealth botHealth)
     {
-        botHealth.TakeDamage(damage);
+        AudioManager.Instance?.PlayTrapSound(SoundCue.ArcherFire);
+
+        if (muzzlePoint != null && arrowProjectilePrefab != null)
+        {
+            ArrowProjectile projectile = Instantiate(arrowProjectilePrefab, muzzlePoint.position, muzzlePoint.rotation);
+            projectile.Initialize(damage);
+        }
+        else
+        {
+            botHealth.TakeDamage(damage);
+        }
+
+        if (archerVisual != null)
+        {
+            StopAllCoroutines();
+            StartCoroutine(RecoilRoutine());
+        }
+    }
+
+    private IEnumerator RecoilRoutine()
+    {
+        Vector3 recoilPos = _visualLocalStart - Vector3.forward * recoilDistance;
+        archerVisual.localPosition = recoilPos;
+        yield return new WaitForSeconds(recoilDuration);
+        archerVisual.localPosition = _visualLocalStart;
     }
 }

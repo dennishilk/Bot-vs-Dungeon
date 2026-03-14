@@ -1,3 +1,5 @@
+using System.Collections;
+using BotVsDungeon.UI;
 using UnityEngine;
 
 public class SimulationManager : MonoBehaviour
@@ -6,6 +8,8 @@ public class SimulationManager : MonoBehaviour
     [SerializeField] private BuildModeController buildModeController;
     [SerializeField] private UIController uiController;
     [SerializeField] private GameObject botPrefab;
+    [SerializeField] private GoalFeedback goalFeedback;
+    [SerializeField] private float cleanupDelay = 0.5f;
 
     private BotAgent _activeBot;
 
@@ -27,6 +31,7 @@ public class SimulationManager : MonoBehaviour
 
         buildModeController.SetBuildMode(false);
         IsSimulationRunning = true;
+        uiController.ClearResult();
 
         Vector3 spawnPos = new(startPos.x, 0.6f, startPos.y);
         GameObject botObj = Instantiate(botPrefab, spawnPos, Quaternion.identity);
@@ -37,6 +42,7 @@ public class SimulationManager : MonoBehaviour
         _activeBot.Initialize(arenaManager, this, goalPos);
         health.OnBotDied += OnBotDied;
 
+        AudioManager.Instance?.PlayUISound(SoundCue.SimulationStart);
         uiController.SetStatus("Simulation running...");
     }
 
@@ -51,12 +57,26 @@ public class SimulationManager : MonoBehaviour
 
         if (_activeBot != null)
         {
-            Destroy(_activeBot.gameObject);
+            StartCoroutine(DestroyBotAfterDelay(_activeBot.gameObject, cleanupDelay));
             _activeBot = null;
         }
 
         buildModeController.SetBuildMode(true);
+
+        bool success = result == "BOT SURVIVED";
         uiController.SetStatus(result);
+        uiController.ShowResult(success);
+
+        AudioManager.Instance?.PlayResultSound(success ? SoundCue.ResultVictory : SoundCue.ResultFail);
+    }
+
+    private IEnumerator DestroyBotAfterDelay(GameObject bot, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (bot != null)
+        {
+            Destroy(bot);
+        }
     }
 
     private void OnBotDied(BotHealth _)
@@ -66,6 +86,8 @@ public class SimulationManager : MonoBehaviour
 
     public void OnBotReachedGoal()
     {
+        goalFeedback?.PlaySuccessFeedback();
+        AudioManager.Instance?.PlayResultSound(SoundCue.BotSuccess);
         StopSimulation("BOT SURVIVED");
     }
 }

@@ -1,14 +1,32 @@
+using System.Collections;
 using UnityEngine;
 
 public class BombTrap : TrapBase
 {
     [SerializeField] private float triggerRadius = 1.5f;
     [SerializeField] private bool explodeOnce = true;
+    [SerializeField] private float armDuration = 0.25f;
+    [SerializeField] private Renderer blinkRenderer;
+    [SerializeField] private Color blinkColor = new(1f, 0.35f, 0.2f, 1f);
+    [SerializeField] private ExplosionEffect explosionEffect;
+
     private bool _hasExploded;
+    private bool _isArming;
+    private Material _blinkMaterial;
+    private Color _baseColor;
+
+    private void Awake()
+    {
+        if (blinkRenderer != null)
+        {
+            _blinkMaterial = blinkRenderer.material;
+            _baseColor = _blinkMaterial.color;
+        }
+    }
 
     private void Update()
     {
-        if (_hasExploded && explodeOnce)
+        if ((_hasExploded && explodeOnce) || _isArming)
         {
             return;
         }
@@ -22,13 +40,9 @@ public class BombTrap : TrapBase
                 continue;
             }
 
-            HandleBot(bot);
+            _isArming = true;
+            StartCoroutine(ArmAndExplode(bot));
             _hasExploded = true;
-            if (explodeOnce)
-            {
-                gameObject.SetActive(false);
-            }
-
             break;
         }
     }
@@ -36,5 +50,33 @@ public class BombTrap : TrapBase
     public override void HandleBot(BotHealth botHealth)
     {
         botHealth.TakeDamage(damage * 2f);
+    }
+
+    private IEnumerator ArmAndExplode(BotHealth bot)
+    {
+        AudioManager.Instance?.PlayTrapSound(SoundCue.BombArm);
+
+        if (_blinkMaterial != null)
+        {
+            _blinkMaterial.color = blinkColor;
+        }
+
+        yield return new WaitForSeconds(armDuration);
+
+        if (_blinkMaterial != null)
+        {
+            _blinkMaterial.color = _baseColor;
+        }
+
+        explosionEffect?.PlayAt(transform.position + Vector3.up * 0.2f);
+        AudioManager.Instance?.PlayTrapSound(SoundCue.BombExplosion);
+        HandleBot(bot);
+
+        _isArming = false;
+
+        if (explodeOnce)
+        {
+            gameObject.SetActive(false);
+        }
     }
 }
