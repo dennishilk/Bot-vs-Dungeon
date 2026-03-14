@@ -1,30 +1,42 @@
-# Bot vs Dungeon Visual Style Guide (Unity 6)
+# Bot vs Dungeon — Visual Style Guide (Retro Dungeon)
 
-For the complete production checklist, use `Assets/Docs/ClassicDungeonAtmospherePass.md`.
+For implementation sequencing and inspector recommendations, see:
+- `Assets/Docs/ClassicDungeonAtmospherePass.md`
+- `Assets/Docs/RetroDungeonVisualPassPlan.md`
 
-## Core Mood Pillars
-- Dark fantasy stone dungeon.
-- Warm torch pools against cool global fill.
-- Stylized readability over realism.
+## 1) Color Palette (Use Consistently)
+- Stone dark slate: `#252B33`
+- Stone blue-grey: `#2F3742`
+- Stone edge highlight: `#434C58`
+- Iron: `#686A6F`
+- Bronze: `#8A6A3F`
+- Danger red: `#B33A33`
+- Danger orange: `#D77A2E`
+- Magic blue: `#4C6FC4`
+- Magic purple: `#6E54B8`
+- Goal gold: `#C7A04A`
+- Goal green glow: `#65B971`
 
-## Palette Anchors
-- Stone: `#1E232A`, `#2A2F36`, `#343B44`
-- Torch: `#FFAD66`, `#FFC073`
-- Danger: `#B83A2F`, `#E26B2F`
-- Arcane: `#4E6CD3`, `#7A55C3`
-- Goal: `#67C97C`, `#D4B04E`
+## 2) Lighting Rules
+- Warm torch pools in cool, dark spaces.
+- Surrounding areas should stay dim to preserve contrast.
+- Shadow casting is required around trap clusters and key architecture.
+- Ambient fill stays soft and low; avoid over-bright scenes.
 
-## Readability Rules
-- Gameplay-critical elements should parse in <1 second from camera default.
-- Avoid placing bright props on key traversal lanes.
-- Traps must preserve unique silhouette + accent identity.
+## 3) Material Style Rules
+- Semi-flat, stylized, low-noise materials.
+- Subtle texture tiling only.
+- Avoid photoreal detail density.
+- Preserve strong silhouette readability from isometric view.
 
-## Lighting Rules
-- Keep fog subtle and depth-oriented, never obscuring trap telegraphs.
-- Prefer point-light torches with small range and animated flicker.
-- Use high contrast around goals and trap clusters.
+## 4) UI Frame Style
+- Core panel language: dark parchment + stone framing.
+- Border language: bronze trim with engraved corners.
+- Active/selected state: subtle rune glow accents.
+- Keep state colors consistent: danger red/orange, success gold/green, magic blue/purple.
 
-## UI Rules
-- Dark stone/iron base, bronze accents, muted parchment support.
-- Preserve color-coded state clarity (selected/safe/danger/success).
-- Decorative rune detail should remain subtle and lightweight.
+## 5) Trap Silhouette Rules
+- Every trap type must be identifiable by shape at a glance.
+- Add restrained color accents for quick recognition.
+- Do not bury trap silhouettes under props, fog, or particles.
+- Trigger/readiness cues should be readable in under one second.
