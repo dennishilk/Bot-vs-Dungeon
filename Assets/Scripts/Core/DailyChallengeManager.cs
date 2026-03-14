@@ -13,6 +13,7 @@ public class DailyChallengeManager : MonoBehaviour
     [SerializeField] private TMP_Text objectiveText;
     [SerializeField] private TMP_Text budgetText;
     [SerializeField] private TMP_Text statusText;
+    [SerializeField] private CampaignManager campaignManager;
 
     [TextArea]
     [SerializeField] private string dailyObjectiveTemplate = "Survive the daily laboratory run.";
@@ -97,7 +98,12 @@ public class DailyChallengeManager : MonoBehaviour
         _resultData.attempts++;
         if (result.survived)
         {
+            bool firstCompletion = !_resultData.completed;
             _resultData.completed = true;
+            if (firstCompletion)
+            {
+                campaignManager?.AwardDailyChallengeCompletion();
+            }
             _resultData.bestSurvived = true;
             if (_resultData.bestCompletionTime <= 0f || result.completionTime < _resultData.bestCompletionTime)
             {
