@@ -131,3 +131,17 @@ The project now includes lightweight meta-progression and style-pass guidance wi
 See:
 - `Assets/Docs/CampaignBureauSetup.md`
 - `Assets/Docs/VisualStyleGuide.md`
+
+## Evolution Lab (Experimental Optional Mode)
+
+An optional experimental mode is now scaffolded to evolve dungeons over generations using deterministic, rule-based evolutionary logic:
+
+- population generation from current dungeon generator
+- automated bot simulation-based evaluation
+- fitness scoring for goals (`Brutal`, `Fair`, `Puzzle`, `Balanced`, `StressTest`)
+- survivor selection + mutation + recombination
+- best-dungeon tracking with save/share integration
+- Evolution Lab menu/panel controller hooks
+
+Setup guide:
+- `Assets/Docs/EvolutionLabSetup.md`
