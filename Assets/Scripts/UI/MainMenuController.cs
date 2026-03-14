@@ -17,6 +17,8 @@ namespace BotVsDungeon.UI
         [SerializeField] private DungeonBrowserPanel dungeonBrowserPanel;
         [SerializeField] private DailyChallengePanel dailyChallengePanel;
         [SerializeField] private StressTestPanel stressTestPanel;
+        [SerializeField] private CampaignScreenController campaignScreenController;
+        [SerializeField] private ProfilePanelController profilePanelController;
 
         [Header("Events")]
         [SerializeField] private UnityEvent onStartGame;
@@ -103,6 +105,34 @@ namespace BotVsDungeon.UI
         public void OpenReplayViewer()
         {
             Debug.Log("Replay Viewer selected.");
+        }
+
+        public void OpenCampaign()
+        {
+            if (uiController != null)
+            {
+                uiController.ShowHUD();
+            }
+
+            campaignScreenController?.SetVisible(true);
+            profilePanelController?.Refresh();
+            dungeonBrowserPanel?.SetVisible(false);
+            dailyChallengePanel?.SetVisible(false);
+            stressTestPanel?.SetVisible(false);
+        }
+
+        public void OpenProfile()
+        {
+            if (uiController != null)
+            {
+                uiController.ShowHUD();
+            }
+
+            profilePanelController?.Refresh();
+            campaignScreenController?.SetVisible(false);
+            dungeonBrowserPanel?.SetVisible(false);
+            dailyChallengePanel?.SetVisible(false);
+            stressTestPanel?.SetVisible(false);
         }
 
         public void QuitGame()

@@ -9,6 +9,7 @@ public class AchievementManager : MonoBehaviour
     [SerializeField] private CertificationManager certificationManager;
     [SerializeField] private ProgressionManager progressionManager;
     [SerializeField] private AchievementPopup achievementPopup;
+    [SerializeField] private CampaignManager campaignManager;
 
     [Header("Thresholds")]
     [SerializeField] private int trapEngineerTrapCount = 10;
@@ -104,6 +105,7 @@ public class AchievementManager : MonoBehaviour
             return;
         }
 
+        campaignManager?.AwardAchievementMilestone(id);
         _popupQueue.Enqueue(data);
         if (!_popupPlaying)
         {

@@ -117,3 +117,17 @@ A built-in debugging toolkit is now available for in-game testing without termin
 - `TestArena` scene workflow and optional prebuilt layouts
 
 See `Assets/Docs/DebugToolkitSetup.md` for full setup and inspector wiring.
+
+## Bureau Campaign + Visual Polish Additions
+
+The project now includes lightweight meta-progression and style-pass guidance without changing core gameplay systems:
+
+- dungeon certification bureau campaign framework (tiers, assignments, rank, promotions)
+- bureau score and career profile persistence
+- campaign/profile/promotion UI controller scripts
+- visual style guide + inspector setup recommendations
+- lightweight atmosphere helpers (`GoalGlowPulse`, `AmbientDustSpawner`, `MenuCameraDrift`, `CameraShakeLight`)
+
+See:
+- `Assets/Docs/CampaignBureauSetup.md`
+- `Assets/Docs/VisualStyleGuide.md`
