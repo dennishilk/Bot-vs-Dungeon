@@ -15,6 +15,8 @@ public class BotAudioController : MonoBehaviour
 
     [Header("Routing")]
     [SerializeField] private AudioSource oneShotSource;
+    [SerializeField] private float minDistance = 1.5f;
+    [SerializeField] private float maxDistance = 16f;
 
     [Header("Bot Audio")]
     [SerializeField] private BotEventClips clips;
@@ -37,7 +39,9 @@ public class BotAudioController : MonoBehaviour
         oneShotSource.playOnAwake = false;
         oneShotSource.spatialBlend = 1f;
         oneShotSource.rolloffMode = AudioRolloffMode.Linear;
-        oneShotSource.maxDistance = 16f;
+        oneShotSource.minDistance = minDistance;
+        oneShotSource.maxDistance = maxDistance;
+        oneShotSource.dopplerLevel = 0f;
     }
 
     public void SetSfxVolume(float value)
@@ -80,7 +84,7 @@ public class BotAudioController : MonoBehaviour
             _ => balancedVolumeMultiplier
         };
 
-        float volume = Mathf.Clamp01(intensity) * _sfxVolume * personalityFactor;
+        float volume = Mathf.Clamp01(intensity) * _sfxVolume * personalityFactor * 0.85f;
         oneShotSource.PlayOneShot(clip, Mathf.Clamp01(volume));
     }
 }

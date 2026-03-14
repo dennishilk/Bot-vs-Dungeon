@@ -13,8 +13,8 @@ public class AmbientAudioController : MonoBehaviour
     [SerializeField] private AudioSource environmentOneShotSource;
     [SerializeField] private AudioClip[] environmentalDetailClips;
     [SerializeField] private Transform[] environmentEmitters;
-    [SerializeField] private Vector2 environmentSoundIntervalRange = new(5f, 11f);
-    [SerializeField] private Vector2 environmentVolumeRange = new(0.2f, 0.45f);
+    [SerializeField] private Vector2 environmentSoundIntervalRange = new(12f, 28f);
+    [SerializeField] private Vector2 environmentVolumeRange = new(0.08f, 0.25f);
 
     [Header("Music Layer")]
     [SerializeField] private AudioSource musicSource;
@@ -32,8 +32,16 @@ public class AmbientAudioController : MonoBehaviour
     [Range(0f, 1f)] [SerializeField] private float ambientLayerScale = 0.45f;
     [Range(0f, 1f)] [SerializeField] private float musicLayerScale = 0.4f;
 
+    [Header("Per-Track Intensity")]
+    [SerializeField] private float menuTrackWeight = 0.85f;
+    [SerializeField] private float gameplayTrackWeight = 0.32f;
+    [SerializeField] private float resultsTrackWeight = 0.65f;
+    [SerializeField] private float promotionTrackWeight = 0.8f;
+    [SerializeField] private float stressTrackWeight = 0.55f;
+
     private float _ambientVolume = 0.45f;
     private float _musicVolume = 0.4f;
+    private float _activeTrackWeight = 1f;
     private Coroutine _environmentCoroutine;
     private Coroutine _musicFadeRoutine;
 
@@ -77,7 +85,7 @@ public class AmbientAudioController : MonoBehaviour
         _musicVolume = Mathf.Clamp01(volume);
         if (musicSource != null)
         {
-            musicSource.volume = _musicVolume * musicLayerScale;
+            musicSource.volume = GetMusicTargetVolume();
         }
     }
 
@@ -98,6 +106,8 @@ public class AmbientAudioController : MonoBehaviour
             MusicTrackType.StressTension => stressTensionMusic,
             _ => dungeonMusic
         };
+
+        _activeTrackWeight = GetTrackWeight(track);
 
         if (target == null || (musicSource.clip == target && musicSource.isPlaying))
         {
@@ -186,6 +196,11 @@ public class AmbientAudioController : MonoBehaviour
             environmentOneShotSource.transform.position = GetEnvironmentEmitterPosition();
             float oneShotVolume = Random.Range(environmentVolumeRange.x, environmentVolumeRange.y) * _ambientVolume;
             environmentOneShotSource.PlayOneShot(clip, oneShotVolume);
+
+            if (clip.length > 0.05f)
+            {
+                yield return new WaitForSeconds(Random.Range(0.15f, 0.65f) * clip.length);
+            }
         }
     }
 
@@ -216,7 +231,7 @@ public class AmbientAudioController : MonoBehaviour
         musicSource.loop = !isStinger;
         musicSource.Play();
 
-        float targetVolume = _musicVolume * musicLayerScale;
+        float targetVolume = GetMusicTargetVolume();
         float fadeInDuration = Mathf.Max(0.01f, musicFadeDuration);
         for (float elapsed = 0f; elapsed < fadeInDuration; elapsed += Time.unscaledDeltaTime)
         {
@@ -226,5 +241,23 @@ public class AmbientAudioController : MonoBehaviour
 
         musicSource.volume = targetVolume;
         _musicFadeRoutine = null;
+    }
+
+    private float GetTrackWeight(MusicTrackType track)
+    {
+        return track switch
+        {
+            MusicTrackType.Menu => menuTrackWeight,
+            MusicTrackType.Gameplay => gameplayTrackWeight,
+            MusicTrackType.Results => resultsTrackWeight,
+            MusicTrackType.PromotionFanfare => promotionTrackWeight,
+            MusicTrackType.StressTension => stressTrackWeight,
+            _ => gameplayTrackWeight
+        };
+    }
+
+    private float GetMusicTargetVolume()
+    {
+        return _musicVolume * musicLayerScale * Mathf.Clamp01(_activeTrackWeight);
     }
 }
