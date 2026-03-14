@@ -91,3 +91,15 @@ Assets/
 - Danger tiles (saw/bomb/archer) apply additional path cost.
 - Bot starts at `Start` tile, seeks `Goal`, and can die at 0 HP.
 - Result text prints `BOT SURVIVED` or `BOT DIED`.
+
+## UI Upgrade (Dark Fantasy Presentation Layer)
+
+A focused UI/HUD pass is provided under `Assets/Scripts/UI` and `Assets/UI/Docs/UISetupGuide.md` with:
+
+- main menu flow (start, quit, settings placeholder)
+- in-game HUD for mode, selected build tool, simulation status
+- build toolbar button highlight behavior
+- bot HP/state panel hooks
+- result banner controller for survive/died feedback
+
+This upgrade intentionally avoids adding new gameplay systems and only improves readability, menu flow, and thematic presentation.
