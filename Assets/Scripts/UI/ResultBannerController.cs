@@ -29,6 +29,8 @@ namespace BotVsDungeon.UI
                 root.SetActive(true);
             }
 
+            AudioManager.Instance?.PlayUI(UIAudioEvent.ResultAppear);
+
             if (resultText != null)
             {
                 resultText.text = text;

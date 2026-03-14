@@ -93,7 +93,10 @@ public class SimulationManager : MonoBehaviour
         EventLogger.Instance?.Log($"Bot spawned ({personality})");
         OnBotSpawned?.Invoke(_activeBot);
 
+        AudioManager.Instance?.PlayBotEvent(BotAudioEvent.Spawn, personality, spawnPos);
         AudioManager.Instance?.PlayUISound(SoundCue.SimulationStart);
+        AudioManager.Instance?.PlayMusicTrack(MusicTrackType.Gameplay);
+        AudioManager.Instance?.QueueAnnouncement(AnnouncerEvent.CertificationInitiated);
         return true;
     }
 
@@ -170,6 +173,11 @@ public class SimulationManager : MonoBehaviour
             uiController.SetStatus(result);
             uiController.ShowResult(success);
             AudioManager.Instance?.PlayResultSound(success ? SoundCue.ResultVictory : SoundCue.ResultFail);
+            AudioManager.Instance?.PlayMusicTrack(MusicTrackType.Results);
+            if (success)
+            {
+                AudioManager.Instance?.QueueAnnouncement(AnnouncerEvent.ComplianceRatingApproved);
+            }
         }
     }
 
@@ -264,7 +272,9 @@ public class SimulationManager : MonoBehaviour
     public void OnBotReachedGoal()
     {
         goalFeedback?.PlaySuccessFeedback();
+        AudioManager.Instance?.PlayBotEvent(BotAudioEvent.Success, _activeRunPersonality, _activeBot != null ? _activeBot.transform.position : (Vector3?)null);
         AudioManager.Instance?.PlayResultSound(SoundCue.BotSuccess);
+        AudioManager.Instance?.QueueAnnouncement(AnnouncerEvent.SurvivabilityThresholdAchieved);
         StopSimulation("BOT SURVIVED", _updateUiForActiveRun);
     }
 

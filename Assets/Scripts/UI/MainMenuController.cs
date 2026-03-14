@@ -29,6 +29,7 @@ namespace BotVsDungeon.UI
 
         public void StartGame()
         {
+            AudioManager.Instance?.PlayUI(UIAudioEvent.ButtonClick);
             onStartGame?.Invoke();
 
             if (useSceneLoading)
@@ -62,6 +63,7 @@ namespace BotVsDungeon.UI
 
         public void OpenDungeonBrowser()
         {
+            AudioManager.Instance?.PlayUI(UIAudioEvent.PanelOpen);
             uiController?.ShowHUD();
             dungeonBrowserPanel?.SetVisible(true);
             dailyChallengePanel?.SetVisible(false);
@@ -73,6 +75,7 @@ namespace BotVsDungeon.UI
 
         public void OpenDailyChallenge()
         {
+            AudioManager.Instance?.PlayUI(UIAudioEvent.PanelOpen);
             uiController?.ShowHUD();
             dungeonBrowserPanel?.SetVisible(false);
             dailyChallengePanel?.SetVisible(true);
@@ -84,7 +87,9 @@ namespace BotVsDungeon.UI
 
         public void OpenStressTest()
         {
+            AudioManager.Instance?.PlayUI(UIAudioEvent.PanelOpen);
             uiController?.ShowHUD();
+            AudioManager.Instance?.SetStressTestTension(true);
             dungeonBrowserPanel?.SetVisible(false);
             dailyChallengePanel?.SetVisible(false);
             stressTestPanel?.SetVisible(true);
@@ -100,6 +105,7 @@ namespace BotVsDungeon.UI
 
         public void OpenDirectorMode()
         {
+            AudioManager.Instance?.PlayUI(UIAudioEvent.PanelOpen);
             uiController?.ShowHUD();
             directorModePanel?.SetVisible(true);
             evolutionUIController?.SetVisible(false);
@@ -111,6 +117,7 @@ namespace BotVsDungeon.UI
 
         public void OpenEvolutionLab()
         {
+            AudioManager.Instance?.PlayUI(UIAudioEvent.PanelOpen);
             uiController?.ShowHUD();
             evolutionUIController?.SetVisible(true);
             directorModePanel?.SetVisible(false);
@@ -122,6 +129,7 @@ namespace BotVsDungeon.UI
 
         public void OpenCampaign()
         {
+            AudioManager.Instance?.PlayUI(UIAudioEvent.PanelOpen);
             uiController?.ShowHUD();
             campaignScreenController?.SetVisible(true);
             profilePanelController?.Refresh();
@@ -134,6 +142,7 @@ namespace BotVsDungeon.UI
 
         public void OpenProfile()
         {
+            AudioManager.Instance?.PlayUI(UIAudioEvent.PanelOpen);
             uiController?.ShowHUD();
             profilePanelController?.Refresh();
             campaignScreenController?.SetVisible(false);
@@ -155,12 +164,15 @@ namespace BotVsDungeon.UI
 
         public void OpenSettingsPlaceholder()
         {
+            AudioManager.Instance?.PlayUI(UIAudioEvent.PanelOpen);
             onOpenSettingsPlaceholder?.Invoke();
             Debug.Log("Settings placeholder selected. No settings menu implemented.");
+            AudioManager.Instance?.PlayMusicTrack(MusicTrackType.Menu);
         }
 
         private void HideOptionalPanels()
         {
+            AudioManager.Instance?.SetStressTestTension(false);
             dungeonBrowserPanel?.SetVisible(false);
             dailyChallengePanel?.SetVisible(false);
             stressTestPanel?.SetVisible(false);

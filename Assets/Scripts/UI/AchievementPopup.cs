@@ -39,6 +39,7 @@ public class AchievementPopup : MonoBehaviour
         }
 
         gameObject.SetActive(true);
+        AudioManager.Instance?.PlayUI(UIAudioEvent.AchievementUnlocked);
         titleText.text = data.title;
         descriptionText.text = data.description;
         if (iconImage != null)

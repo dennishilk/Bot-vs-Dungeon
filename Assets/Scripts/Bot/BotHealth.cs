@@ -16,10 +16,12 @@ public class BotHealth : MonoBehaviour
     public DamageSource LastDamageSource { get; private set; } = DamageSource.Unknown;
 
     private bool _isDying;
+    private BotAgent _agent;
 
     private void Awake()
     {
         CurrentHp = maxHp;
+        _agent = GetComponent<BotAgent>();
     }
 
     public void TakeDamage(float amount, DamageSource source = DamageSource.Unknown)
@@ -44,12 +46,16 @@ public class BotHealth : MonoBehaviour
         hitFlashEffect?.PlayHitFlash(transform.position + Vector3.up * 0.4f);
         OnBotDamaged?.Invoke(amount, CurrentHp);
         EventLogger.Instance?.Log($"Bot took {amount:0} damage (HP: {CurrentHp:0})");
+        BotPersonality personality = _agent != null ? _agent.GetPersonality() : BotPersonality.Balanced;
+        AudioManager.Instance?.PlayBotEvent(BotAudioEvent.Hurt, personality, transform.position);
         AudioManager.Instance?.PlayTrapSound(SoundCue.BotHurt);
 
         if (CurrentHp <= 0f)
         {
             EventLogger.Instance?.Log("Bot died");
+            AudioManager.Instance?.PlayBotEvent(BotAudioEvent.Death, personality, transform.position);
             AudioManager.Instance?.PlayResultSound(SoundCue.BotDeath);
+            AudioManager.Instance?.QueueAnnouncement(AnnouncerEvent.BotFatalityRecorded);
             OnBotDied?.Invoke(this);
             if (!_isDying)
             {
