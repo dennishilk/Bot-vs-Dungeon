@@ -271,6 +271,7 @@ public class SimulationManager : MonoBehaviour
 
     public void OnBotReachedGoal()
     {
+        ReplayEventStream.Emit(ReplayEventType.GoalReached, _activeBot != null ? _activeBot.transform.position : Vector3.zero, "Goal", 1f, "Bot reached goal");
         goalFeedback?.PlaySuccessFeedback();
         AudioManager.Instance?.PlayBotEvent(BotAudioEvent.Success, _activeRunPersonality, _activeBot != null ? _activeBot.transform.position : (Vector3?)null);
         AudioManager.Instance?.PlayResultSound(SoundCue.BotSuccess);

@@ -40,6 +40,7 @@ public class ArcherTrap : TrapBase
         if (bot != null)
         {
             EventLogger.Instance?.Log("Trap activated: archer");
+            ReplayEventStream.Emit(ReplayEventType.TrapActivated, transform.position, "ArcherTrap", damage, "Archer fired");
             HandleBot(bot);
         }
     }

@@ -50,6 +50,7 @@ public class SawTrap : TrapBase
     public override void HandleBot(BotHealth botHealth)
     {
         EventLogger.Instance?.Log($"Trap activated: saw ({damage:0})");
+        ReplayEventStream.Emit(ReplayEventType.TrapActivated, transform.position, "SawTrap", damage, "Saw damage tick");
         botHealth.TakeDamage(damage, DamageSource.SawTrap);
         AudioManager.Instance?.PlayTrap(TrapSoundType.SawTrap, TrapSoundEvent.Damage, botHealth.transform.position, 0.8f);
         EventLogger.Instance?.Log($"Bot took {damage:0} damage");
