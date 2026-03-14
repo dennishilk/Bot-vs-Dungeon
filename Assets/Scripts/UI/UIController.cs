@@ -45,6 +45,10 @@ namespace BotVsDungeon.UI
         [SerializeField] private TMP_Text selectedItemText;
         [SerializeField] private TMP_Text trapDescriptionText;
 
+        [Header("Challenge HUD")]
+        [SerializeField] private TMP_Text trapBudgetText;
+        [SerializeField] private TMP_Text objectiveText;
+
         [Header("Control Buttons")]
         [SerializeField] private Button buildModeButton;
         [SerializeField] private Button simulateButton;
@@ -151,6 +155,23 @@ namespace BotVsDungeon.UI
             if (trapDescriptionText != null)
             {
                 trapDescriptionText.text = GetItemDescription(item);
+            }
+        }
+
+        public void SetTrapBudget(int used, int max, Color color)
+        {
+            if (trapBudgetText != null)
+            {
+                trapBudgetText.text = $"Trap Budget\n{used} / {max}";
+                trapBudgetText.color = color;
+            }
+        }
+
+        public void SetObjectiveText(string description)
+        {
+            if (objectiveText != null)
+            {
+                objectiveText.text = $"Level Objective\n{description}";
             }
         }
 
