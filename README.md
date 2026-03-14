@@ -145,3 +145,17 @@ An optional experimental mode is now scaffolded to evolve dungeons over generati
 
 Setup guide:
 - `Assets/Docs/EvolutionLabSetup.md`
+
+
+## Classic Dungeon Atmosphere Pass
+
+A dedicated mood/presentation pass has been added for Unity 6 with lightweight scripts and setup guidance for:
+
+- torch lighting + flicker
+- fog + localized pit mist
+- rune/goal pulse effects
+- ambient dungeon audio layering + simple music state routing
+- classic isometric camera framing + light impact shake
+- dungeon UI/theme consistency recommendations
+
+See `Assets/Docs/ClassicDungeonAtmospherePass.md` for the full implementation plan and inspector setup.

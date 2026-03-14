@@ -9,6 +9,9 @@ public class BombTrap : TrapBase
     [SerializeField] private Renderer blinkRenderer;
     [SerializeField] private Color blinkColor = new(1f, 0.35f, 0.2f, 1f);
     [SerializeField] private ExplosionEffect explosionEffect;
+    [SerializeField] private LightCameraShake cameraShake;
+    [SerializeField] private float shakeDuration = 0.18f;
+    [SerializeField] private float shakeMagnitude = 0.1f;
 
     private bool _hasExploded;
     private bool _isArming;
@@ -71,6 +74,7 @@ public class BombTrap : TrapBase
         }
 
         explosionEffect?.PlayAt(transform.position + Vector3.up * 0.2f);
+        cameraShake?.Shake(shakeDuration, shakeMagnitude);
         AudioManager.Instance?.PlayTrapSound(SoundCue.BombExplosion);
         HandleBot(bot);
         EventLogger.Instance?.Log($"Bot took {damage * 2f:0} damage");
