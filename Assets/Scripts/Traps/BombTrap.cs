@@ -59,6 +59,7 @@ public class BombTrap : TrapBase
     private IEnumerator ArmAndExplode(BotHealth bot)
     {
         EventLogger.Instance?.Log("Trap activated: bomb arming");
+        AudioManager.Instance?.PlayTrap(TrapSoundType.BombTrap, TrapSoundEvent.Arm, transform.position, 0.8f);
         AudioManager.Instance?.PlayTrapSound(SoundCue.BombArm);
 
         if (_blinkMaterial != null)
@@ -75,6 +76,8 @@ public class BombTrap : TrapBase
 
         explosionEffect?.PlayAt(transform.position + Vector3.up * 0.2f);
         cameraShake?.Shake(shakeDuration, shakeMagnitude);
+        AudioManager.Instance?.PlayTrap(TrapSoundType.BombTrap, TrapSoundEvent.Impact, transform.position, 1f);
+        AudioManager.Instance?.PlayTrap(TrapSoundType.BombTrap, TrapSoundEvent.Secondary, transform.position, 0.7f);
         AudioManager.Instance?.PlayTrapSound(SoundCue.BombExplosion);
         HandleBot(bot);
         EventLogger.Instance?.Log($"Bot took {damage * 2f:0} damage");

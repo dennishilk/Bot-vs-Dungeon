@@ -46,12 +46,14 @@ public class ArcherTrap : TrapBase
 
     public override void HandleBot(BotHealth botHealth)
     {
+        AudioManager.Instance?.PlayTrap(TrapSoundType.ArcherTrap, TrapSoundEvent.Activate, transform.position, 0.9f);
         AudioManager.Instance?.PlayTrapSound(SoundCue.ArcherFire);
 
         if (muzzlePoint != null && arrowProjectilePrefab != null)
         {
             ArrowProjectile projectile = Instantiate(arrowProjectilePrefab, muzzlePoint.position, muzzlePoint.rotation);
             projectile.Initialize(damage);
+            AudioManager.Instance?.PlayTrap(TrapSoundType.ArcherTrap, TrapSoundEvent.Flight, muzzlePoint.position, 0.6f);
         }
         else
         {

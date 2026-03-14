@@ -27,6 +27,8 @@ public class ArrowProjectile : MonoBehaviour
             bot.TakeDamage(_damage, DamageSource.ArcherTrap);
         }
 
+        AudioManager.Instance?.PlayTrap(TrapSoundType.ArcherTrap, TrapSoundEvent.Impact, transform.position, 0.8f);
+
         if (impactParticle != null)
         {
             impactParticle.transform.parent = null;

@@ -13,12 +13,20 @@ public class SawTrap : TrapBase
     {
         _loopSource = GetComponent<AudioSource>();
         _loopSource.spatialBlend = 1f;
+        AudioManager.Instance?.StartTrapLoop(TrapSoundType.SawTrap, transform);
         AudioManager.Instance?.PlaySawLoop(_loopSource);
     }
 
     private void OnEnable()
     {
+        AudioManager.Instance?.StartTrapLoop(TrapSoundType.SawTrap, transform);
         AudioManager.Instance?.PlaySawLoop(_loopSource);
+    }
+
+
+    private void OnDisable()
+    {
+        AudioManager.Instance?.StopTrapLoop(TrapSoundType.SawTrap, transform);
     }
 
     private void OnTriggerStay(Collider other)
@@ -43,6 +51,7 @@ public class SawTrap : TrapBase
     {
         EventLogger.Instance?.Log($"Trap activated: saw ({damage:0})");
         botHealth.TakeDamage(damage, DamageSource.SawTrap);
+        AudioManager.Instance?.PlayTrap(TrapSoundType.SawTrap, TrapSoundEvent.Damage, botHealth.transform.position, 0.8f);
         EventLogger.Instance?.Log($"Bot took {damage:0} damage");
 
         if (contactSpark != null)

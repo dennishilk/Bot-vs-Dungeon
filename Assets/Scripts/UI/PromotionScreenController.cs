@@ -20,6 +20,8 @@ public class PromotionScreenController : MonoBehaviour
         {
             panelRoot.SetActive(false);
         }
+
+        AudioManager.Instance?.PlayUI(UIAudioEvent.PanelClose);
     }
 
     private void OnDestroy()
@@ -36,6 +38,9 @@ public class PromotionScreenController : MonoBehaviour
         {
             panelRoot.SetActive(true);
         }
+
+        AudioManager.Instance?.PlayUI(UIAudioEvent.PromotionEarned);
+        AudioManager.Instance?.PlayMusicTrack(MusicTrackType.PromotionFanfare);
 
         if (titleText != null)
         {
@@ -61,5 +66,7 @@ public class PromotionScreenController : MonoBehaviour
         {
             panelRoot.SetActive(false);
         }
+
+        AudioManager.Instance?.PlayUI(UIAudioEvent.PanelClose);
     }
 }
