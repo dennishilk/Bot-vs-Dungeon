@@ -14,6 +14,9 @@ namespace BotVsDungeon.UI
         [SerializeField] private string gameSceneName = "Main";
         [SerializeField] private UIController uiController;
         [SerializeField] private SceneTransitionController sceneTransitionController;
+        [SerializeField] private DungeonBrowserPanel dungeonBrowserPanel;
+        [SerializeField] private DailyChallengePanel dailyChallengePanel;
+        [SerializeField] private StressTestPanel stressTestPanel;
 
         [Header("Events")]
         [SerializeField] private UnityEvent onStartGame;
@@ -58,6 +61,43 @@ namespace BotVsDungeon.UI
             {
                 uiController.ShowHUD();
             }
+        }
+
+
+        public void OpenDungeonBrowser()
+        {
+            if (uiController != null)
+            {
+                uiController.ShowHUD();
+            }
+
+            dungeonBrowserPanel?.SetVisible(true);
+            dailyChallengePanel?.SetVisible(false);
+            stressTestPanel?.SetVisible(false);
+        }
+
+        public void OpenDailyChallenge()
+        {
+            if (uiController != null)
+            {
+                uiController.ShowHUD();
+            }
+
+            dungeonBrowserPanel?.SetVisible(false);
+            dailyChallengePanel?.SetVisible(true);
+            stressTestPanel?.SetVisible(false);
+        }
+
+        public void OpenStressTest()
+        {
+            if (uiController != null)
+            {
+                uiController.ShowHUD();
+            }
+
+            dungeonBrowserPanel?.SetVisible(false);
+            dailyChallengePanel?.SetVisible(false);
+            stressTestPanel?.SetVisible(true);
         }
 
         public void OpenReplayViewer()

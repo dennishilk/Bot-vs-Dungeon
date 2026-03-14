@@ -8,6 +8,7 @@ public class SharePanelController : MonoBehaviour
     [SerializeField] private TMP_Text statusText;
     [SerializeField] private string exportedDungeonName = "shared_dungeon";
     [SerializeField] private GameObject panelRoot;
+    [SerializeField] private DungeonSaveManager saveManager;
 
     public void SetVisible(bool visible)
     {
@@ -42,7 +43,21 @@ public class SharePanelController : MonoBehaviour
         }
 
         bool applied = shareCodeManager.ApplyImportedDungeon(data, out string applyMessage);
-        SetStatus(applied ? "Share code imported successfully." : applyMessage, applied);
+        if (!applied)
+        {
+            SetStatus(applyMessage, false);
+            return;
+        }
+
+        string importedName = !string.IsNullOrWhiteSpace(data.saveName)
+            ? data.saveName
+            : $"imported_{System.DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
+        if (saveManager != null)
+        {
+            saveManager.SaveImportedLayout(importedName, data, true, out _);
+        }
+
+        SetStatus("Share code imported successfully.", true);
     }
 
     public void CopyCodeClicked()

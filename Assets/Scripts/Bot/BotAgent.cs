@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -34,6 +35,10 @@ public class BotAgent : MonoBehaviour
     private int _pathIndex;
     private Vector2Int _goalTile;
     private bool _panicTriggered;
+    private float _manualUpdateInterval;
+    private float _manualUpdateTimer;
+
+    public event Action<BotAgent> OnGoalReached;
 
     public BotState CurrentState { get; private set; } = BotState.Idle;
     public string LastDecision { get; private set; } = "Idle";
@@ -66,7 +71,14 @@ public class BotAgent : MonoBehaviour
         _simulationManager = simulationManager;
         _goalTile = goal;
         _panicTriggered = false;
+        _manualUpdateTimer = 0f;
         RecalculatePath();
+    }
+
+    public void ConfigureUpdateFrequency(float intervalSeconds)
+    {
+        _manualUpdateInterval = Mathf.Max(0f, intervalSeconds);
+        _manualUpdateTimer = 0f;
     }
 
     private void RecalculatePath(float forcedNoise = 0f)
@@ -106,7 +118,20 @@ public class BotAgent : MonoBehaviour
             RecalculatePath(panicPathNoise);
         }
 
-        SimulateStep(Time.deltaTime);
+        float step = Time.deltaTime;
+        if (_manualUpdateInterval > 0f)
+        {
+            _manualUpdateTimer += Time.deltaTime;
+            if (_manualUpdateTimer < _manualUpdateInterval)
+            {
+                return;
+            }
+
+            step = _manualUpdateTimer;
+            _manualUpdateTimer = 0f;
+        }
+
+        SimulateStep(step);
     }
 
     public void SimulateSingleStep(float stepDelta = 0.15f)
@@ -139,7 +164,8 @@ public class BotAgent : MonoBehaviour
             CurrentState = BotState.ReachedGoal;
             LastDecision = "Goal reached";
             EventLogger.Instance?.Log("Bot reached goal");
-            _simulationManager.OnBotReachedGoal();
+            OnGoalReached?.Invoke(this);
+            _simulationManager?.OnBotReachedGoal();
         }
     }
 

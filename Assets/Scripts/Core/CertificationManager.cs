@@ -15,6 +15,7 @@ public class CertificationManager : MonoBehaviour
     [SerializeField] private float fairHpThreshold = 30f;
     [SerializeField] private ResultScreenController resultScreenController;
     [SerializeField] private string dungeonName = "Untitled Dungeon";
+    [SerializeField] private DungeonSaveManager dungeonSaveManager;
     [SerializeField] private float resultScreenDelay = 0.25f;
 
     private readonly List<RunResult> _runResults = new();
@@ -138,6 +139,7 @@ public class CertificationManager : MonoBehaviour
         }
 
         resultScreenController?.Show(dungeonName, report, _runResults.AsReadOnly());
+        dungeonSaveManager?.UpdateRating(dungeonName, report.rating);
         OnCertificationCompleted?.Invoke(report, _runResults.AsReadOnly());
         replayRecorder?.EndCertificationSession();
         IsCertificationRunning = false;
