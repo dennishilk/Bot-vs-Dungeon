@@ -59,6 +59,7 @@ public class BombTrap : TrapBase
     private IEnumerator ArmAndExplode(BotHealth bot)
     {
         EventLogger.Instance?.Log("Trap activated: bomb arming");
+        ReplayEventStream.Emit(ReplayEventType.TrapActivated, transform.position, "BombTrap", damage * 2f, "Bomb armed");
         AudioManager.Instance?.PlayTrap(TrapSoundType.BombTrap, TrapSoundEvent.Arm, transform.position, 0.8f);
         AudioManager.Instance?.PlayTrapSound(SoundCue.BombArm);
 

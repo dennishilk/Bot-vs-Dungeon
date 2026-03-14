@@ -167,6 +167,7 @@ public class StressTestManager : MonoBehaviour
         tracked.finished = true;
         _completed++;
         _survived++;
+        ReplayEventStream.Emit(ReplayEventType.GoalReached, tracked.bot != null ? tracked.bot.transform.position : Vector3.zero, "StressGoal", 1f, "Stress bot survived");
         _accumulatedSurvivalTime += Mathf.Max(0f, Time.time - tracked.spawnTime);
         _accumulatedPathLength += tracked.agent != null ? tracked.agent.TraversedPathLength : 0f;
 
@@ -187,6 +188,7 @@ public class StressTestManager : MonoBehaviour
         tracked.finished = true;
         _completed++;
         _died++;
+        ReplayEventStream.Emit(ReplayEventType.BotDeath, tracked.bot != null ? tracked.bot.transform.position : Vector3.zero, "StressDeath", 1f, "Stress bot died");
         _accumulatedSurvivalTime += Mathf.Max(0f, Time.time - tracked.spawnTime);
         _accumulatedPathLength += tracked.agent != null ? tracked.agent.TraversedPathLength : 0f;
 

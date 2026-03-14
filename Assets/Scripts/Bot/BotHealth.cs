@@ -45,6 +45,7 @@ public class BotHealth : MonoBehaviour
 
         hitFlashEffect?.PlayHitFlash(transform.position + Vector3.up * 0.4f);
         OnBotDamaged?.Invoke(amount, CurrentHp);
+        ReplayEventStream.Emit(ReplayEventType.BotDamage, transform.position, source.ToString(), amount, $"HP:{CurrentHp:0.0}");
         EventLogger.Instance?.Log($"Bot took {amount:0} damage (HP: {CurrentHp:0})");
         BotPersonality personality = _agent != null ? _agent.GetPersonality() : BotPersonality.Balanced;
         AudioManager.Instance?.PlayBotEvent(BotAudioEvent.Hurt, personality, transform.position);
@@ -53,6 +54,7 @@ public class BotHealth : MonoBehaviour
         if (CurrentHp <= 0f)
         {
             EventLogger.Instance?.Log("Bot died");
+            ReplayEventStream.Emit(ReplayEventType.BotDeath, transform.position, source.ToString(), amount, "Bot died");
             AudioManager.Instance?.PlayBotEvent(BotAudioEvent.Death, personality, transform.position);
             AudioManager.Instance?.PlayResultSound(SoundCue.BotDeath);
             AudioManager.Instance?.QueueAnnouncement(AnnouncerEvent.BotFatalityRecorded);

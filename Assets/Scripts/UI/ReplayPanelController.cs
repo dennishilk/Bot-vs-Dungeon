@@ -6,6 +6,9 @@ using UnityEngine.UI;
 public class ReplayPanelController : MonoBehaviour
 {
     [SerializeField] private ReplayViewer replayViewer;
+    [SerializeField] private HighlightReplayPlayer highlightReplayPlayer;
+    [SerializeField] private DevlogCaptureController devlogCaptureController;
+    [SerializeField] private Toggle devlogToggle;
     [SerializeField] private TMP_Dropdown replayListDropdown;
     [SerializeField] private TMP_Text detailsText;
     [SerializeField] private TMP_Text statusText;
@@ -23,6 +26,12 @@ public class ReplayPanelController : MonoBehaviour
             speedSlider.onValueChanged.RemoveListener(OnSpeedChanged);
             speedSlider.onValueChanged.AddListener(OnSpeedChanged);
             OnSpeedChanged(speedSlider.value);
+        }
+
+        if (devlogToggle != null)
+        {
+            devlogToggle.onValueChanged.RemoveListener(OnDevlogToggleChanged);
+            devlogToggle.onValueChanged.AddListener(OnDevlogToggleChanged);
         }
     }
 
@@ -102,6 +111,31 @@ public class ReplayPanelController : MonoBehaviour
         SetStatus("Replay stepped forward.", true);
     }
 
+    public void RewindClicked()
+    {
+        replayViewer.RewindStep();
+        SetStatus("Replay rewound.", true);
+    }
+
+    public void JumpToHighlightClicked()
+    {
+        replayViewer.JumpToHighlight(1);
+        SetStatus("Jumped to highlight.", true);
+    }
+
+    public void PlayHighlightsClicked()
+    {
+        highlightReplayPlayer?.PlayHighlights();
+        SetStatus("Highlight replay started.", true);
+    }
+
+    public void CinematicReplayClicked()
+    {
+        replayViewer.PlayCinematicIntro();
+        replayViewer.Play();
+        SetStatus("Cinematic replay started.", true);
+    }
+
     private void UpdateSelectedReplayDetails()
     {
         if (detailsText == null)
@@ -121,7 +155,9 @@ public class ReplayPanelController : MonoBehaviour
             $"Result: {(run.survived ? "Survived" : "Died")}\n" +
             $"Cause: {run.causeOfDeath}\n" +
             $"Replay Time: {run.completionTime:0.00}s\n" +
-            $"Frames: {run.frames.Count}";
+            $"Frames: {run.frames.Count}\n" +
+            $"Events: {run.events.Count}\n" +
+            $"Highlights: {(run.timeline != null ? run.timeline.highlights.Count : 0)}";
     }
 
     private void OnSpeedChanged(float value)
@@ -130,6 +166,15 @@ public class ReplayPanelController : MonoBehaviour
         if (speedLabel != null)
         {
             speedLabel.text = $"Speed: {value:0.0}x";
+        }
+    }
+
+    private void OnDevlogToggleChanged(bool enabled)
+    {
+        if (enabled)
+        {
+            devlogCaptureController?.StartDevlogCapture();
+            SetStatus("Devlog capture started.", true);
         }
     }
 

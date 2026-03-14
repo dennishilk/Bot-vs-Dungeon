@@ -5,6 +5,7 @@ using UnityEngine;
 public class ReplayViewer : MonoBehaviour
 {
     [SerializeField] private ReplayRecorder replayRecorder;
+    [SerializeField] private ReplayCameraController replayCameraController;
     [SerializeField] private GameObject replayBotPrefab;
     [SerializeField] private Transform replayRoot;
     [SerializeField] private LineRenderer replayPathLine;
@@ -16,11 +17,13 @@ public class ReplayViewer : MonoBehaviour
     private Coroutine _playRoutine;
     private RunReplayData _activeReplay;
     private int _frameIndex;
+    private int _highlightIndex;
 
     public float ReplaySpeed { get; private set; } = 1f;
     public bool IsPlaying => _playRoutine != null;
     public RunReplayData ActiveReplay => _activeReplay;
     public int CurrentFrameIndex => _frameIndex;
+    public float CurrentTime => _activeReplay == null || _activeReplay.frames.Count == 0 ? 0f : _activeReplay.frames[_frameIndex].timestamp;
 
     private void Awake()
     {
@@ -51,6 +54,7 @@ public class ReplayViewer : MonoBehaviour
         StopReplay();
         _activeReplay = runs[index];
         _frameIndex = 0;
+        _highlightIndex = 0;
         EnsureReplayObjects();
         ApplyFrame(0);
         DrawPath();
@@ -87,6 +91,8 @@ public class ReplayViewer : MonoBehaviour
         {
             ApplyFrame(0);
         }
+
+        replayCameraController?.SetCinematicMode(false);
     }
 
     public void StepForward()
@@ -100,6 +106,63 @@ public class ReplayViewer : MonoBehaviour
         ApplyFrame(_frameIndex);
     }
 
+    public void RewindStep()
+    {
+        if (_activeReplay == null || _activeReplay.frames.Count == 0)
+        {
+            return;
+        }
+
+        _frameIndex = Mathf.Max(0, _frameIndex - 1);
+        ApplyFrame(_frameIndex);
+    }
+
+    public void JumpToHighlight(int offset = 0)
+    {
+        if (_activeReplay == null || _activeReplay.timeline == null || _activeReplay.timeline.highlights.Count == 0)
+        {
+            return;
+        }
+
+        _highlightIndex = Mathf.Clamp(_highlightIndex + offset, 0, _activeReplay.timeline.highlights.Count - 1);
+        JumpToTime(_activeReplay.timeline.highlights[_highlightIndex].timestamp);
+    }
+
+    public void JumpToTime(float timestamp)
+    {
+        if (_activeReplay == null || _activeReplay.frames.Count == 0)
+        {
+            return;
+        }
+
+        int best = 0;
+        float bestDiff = Mathf.Abs(_activeReplay.frames[0].timestamp - timestamp);
+        for (int i = 1; i < _activeReplay.frames.Count; i++)
+        {
+            float diff = Mathf.Abs(_activeReplay.frames[i].timestamp - timestamp);
+            if (diff < bestDiff)
+            {
+                best = i;
+                bestDiff = diff;
+            }
+        }
+
+        _frameIndex = best;
+        ApplyFrame(_frameIndex);
+    }
+
+    public void PlayCinematicIntro()
+    {
+        if (_activeReplay == null || _activeReplay.frames.Count == 0)
+        {
+            return;
+        }
+
+        replayCameraController?.SetCinematicMode(true);
+        Vector3 start = _activeReplay.frames[0].botPosition;
+        replayCameraController?.SetBehavior(CameraBehaviorType.IntroPan, start, false);
+    }
+
     public void SetReplaySpeed(float speed)
     {
         ReplaySpeed = Mathf.Max(0.1f, speed);
@@ -107,6 +170,8 @@ public class ReplayViewer : MonoBehaviour
 
     private IEnumerator PlayRoutine()
     {
+        replayCameraController?.SetCinematicMode(true);
+
         while (_activeReplay != null && _frameIndex < _activeReplay.frames.Count - 1)
         {
             int next = _frameIndex + 1;
@@ -114,6 +179,7 @@ public class ReplayViewer : MonoBehaviour
             yield return new WaitForSecondsRealtime(dt / ReplaySpeed);
             _frameIndex = next;
             ApplyFrame(_frameIndex);
+            ApplyCameraEvents(_activeReplay.frames[_frameIndex].timestamp);
         }
 
         _playRoutine = null;
@@ -141,6 +207,30 @@ public class ReplayViewer : MonoBehaviour
         {
             _replayBotInstance.transform.position = frame.botPosition;
         }
+
+        replayCameraController?.SetFocusPoint(frame.botPosition);
+    }
+
+    private void ApplyCameraEvents(float replayTime)
+    {
+        if (_activeReplay == null || _activeReplay.timeline == null || _activeReplay.timeline.cameraEvents.Count == 0)
+        {
+            return;
+        }
+
+        for (int i = _activeReplay.timeline.cameraEvents.Count - 1; i >= 0; i--)
+        {
+            ReplayCameraEvent cameraEvent = _activeReplay.timeline.cameraEvents[i];
+            if (cameraEvent.timestamp > replayTime)
+            {
+                continue;
+            }
+
+            replayCameraController?.SetBehavior(cameraEvent.behavior, cameraEvent.focusPoint, cameraEvent.slowMotion);
+            return;
+        }
+
+        replayCameraController?.SetBehavior(CameraBehaviorType.FollowBot, _activeReplay.frames[_frameIndex].botPosition, false);
     }
 
     private void DrawPath()
