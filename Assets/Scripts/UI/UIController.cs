@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
@@ -37,6 +38,8 @@ namespace BotVsDungeon.UI
         [Header("Top Bar")]
         [SerializeField] private TMP_Text modeText;
         [SerializeField] private TMP_Text simulationStatusText;
+        [SerializeField] private Image simulationStatusBackdrop;
+        [SerializeField] private Color statusFlashColor = new(0.35f, 0.55f, 0.8f, 0.35f);
 
         [Header("Selection")]
         [SerializeField] private TMP_Text selectedItemText;
@@ -73,6 +76,7 @@ namespace BotVsDungeon.UI
             {
                 buildModeButton.onClick.AddListener(() =>
                 {
+                    AudioManager.Instance?.PlayUISound(SoundCue.UIButtonClick);
                     SetMode(UIMode.Build);
                     onBuildModeRequested?.Invoke();
                 });
@@ -82,6 +86,7 @@ namespace BotVsDungeon.UI
             {
                 simulateButton.onClick.AddListener(() =>
                 {
+                    AudioManager.Instance?.PlayUISound(SoundCue.UIButtonClick);
                     SetMode(UIMode.Simulation);
                     SetSimulationStatus("Simulation Running");
                     onSimulateRequested?.Invoke();
@@ -92,6 +97,7 @@ namespace BotVsDungeon.UI
             {
                 clearDungeonButton.onClick.AddListener(() =>
                 {
+                    AudioManager.Instance?.PlayUISound(SoundCue.UIButtonClick);
                     SetSimulationStatus("Dungeon Cleared");
                     ClearResult();
                     onClearDungeonRequested?.Invoke();
@@ -102,6 +108,7 @@ namespace BotVsDungeon.UI
             {
                 returnToMenuButton.onClick.AddListener(() =>
                 {
+                    AudioManager.Instance?.PlayUISound(SoundCue.UIButtonClick);
                     ShowMainMenu();
                     onReturnToMenuRequested?.Invoke();
                 });
@@ -147,11 +154,22 @@ namespace BotVsDungeon.UI
             }
         }
 
+        public void SetStatus(string status)
+        {
+            SetSimulationStatus(status);
+        }
+
         public void SetSimulationStatus(string status)
         {
             if (simulationStatusText != null)
             {
                 simulationStatusText.text = $"Status: {status}";
+            }
+
+            if (simulationStatusBackdrop != null)
+            {
+                StopAllCoroutines();
+                StartCoroutine(StatusFlashRoutine());
             }
         }
 
@@ -174,6 +192,25 @@ namespace BotVsDungeon.UI
             {
                 SetPanelState(resultBannerPanel, false);
             }
+        }
+
+
+        private IEnumerator StatusFlashRoutine()
+        {
+            Color transparent = statusFlashColor;
+            transparent.a = 0f;
+            simulationStatusBackdrop.color = statusFlashColor;
+
+            float duration = 0.2f;
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                simulationStatusBackdrop.color = Color.Lerp(statusFlashColor, transparent, elapsed / duration);
+                yield return null;
+            }
+
+            simulationStatusBackdrop.color = transparent;
         }
 
         private void ApplyState()
