@@ -8,6 +8,7 @@ public class CertificationManager : MonoBehaviour
     [SerializeField] private SimulationManager simulationManager;
     [SerializeField] private DungeonReportPanel reportPanel;
     [SerializeField] private DeathMarkerSpawner deathMarkerSpawner;
+    [SerializeField] private ReplayRecorder replayRecorder;
     [SerializeField] private float delayBetweenRuns = 0.75f;
     [SerializeField] private bool showPathHistoryByDefault = true;
     [SerializeField] private float safeHpThreshold = 50f;
@@ -72,6 +73,7 @@ public class CertificationManager : MonoBehaviour
 
         reportPanel?.Hide();
         ClearMarkersAndHistory();
+        replayRecorder?.BeginCertificationSession("Certification Runs");
 
         BotPersonality[] personalities =
         {
@@ -127,6 +129,7 @@ public class CertificationManager : MonoBehaviour
         LastReport = report;
         reportPanel?.ShowReport(report);
         OnCertificationCompleted?.Invoke(report, _runResults.AsReadOnly());
+        replayRecorder?.EndCertificationSession();
         IsCertificationRunning = false;
         CurrentRunIndex = 0;
         TotalRunsInCertification = 0;
