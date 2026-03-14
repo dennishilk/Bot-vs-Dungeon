@@ -13,6 +13,7 @@ namespace BotVsDungeon.UI
         [SerializeField] private bool useSceneLoading = false;
         [SerializeField] private string gameSceneName = "Main";
         [SerializeField] private UIController uiController;
+        [SerializeField] private SceneTransitionController sceneTransitionController;
 
         [Header("Events")]
         [SerializeField] private UnityEvent onStartGame;
@@ -24,7 +25,15 @@ namespace BotVsDungeon.UI
 
             if (useSceneLoading)
             {
-                SceneManager.LoadScene(gameSceneName);
+                SceneTransitionController transition = sceneTransitionController != null ? sceneTransitionController : SceneTransitionController.Instance;
+                if (transition != null)
+                {
+                    transition.FadeAndLoadScene(gameSceneName);
+                }
+                else
+                {
+                    SceneManager.LoadScene(gameSceneName);
+                }
                 return;
             }
 
@@ -32,6 +41,28 @@ namespace BotVsDungeon.UI
             {
                 uiController.ShowHUD();
             }
+        }
+
+
+        public void OpenChallengeLevels()
+        {
+            if (uiController != null)
+            {
+                uiController.ShowHUD();
+            }
+        }
+
+        public void OpenSandboxMode()
+        {
+            if (uiController != null)
+            {
+                uiController.ShowHUD();
+            }
+        }
+
+        public void OpenReplayViewer()
+        {
+            Debug.Log("Replay Viewer selected.");
         }
 
         public void QuitGame()

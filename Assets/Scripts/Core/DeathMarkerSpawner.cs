@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -6,6 +7,8 @@ public class DeathMarkerSpawner : MonoBehaviour
     [SerializeField] private GameObject markerPrefab;
     [SerializeField] private GameObject successMarkerPrefab;
     [SerializeField] private float markerHeight = 0.2f;
+    [SerializeField] private float pulseDuration = 0.45f;
+    [SerializeField] private float pulseScaleMultiplier = 1.2f;
 
     private readonly List<GameObject> _spawnedMarkers = new();
 
@@ -60,8 +63,30 @@ public class DeathMarkerSpawner : MonoBehaviour
         }
 
         _spawnedMarkers.Add(marker);
+        StartCoroutine(PulseMarker(marker.transform));
     }
 
+
+    private IEnumerator PulseMarker(Transform markerTransform)
+    {
+        if (markerTransform == null)
+        {
+            yield break;
+        }
+
+        Vector3 baseScale = markerTransform.localScale;
+        Vector3 pulseScale = baseScale * pulseScaleMultiplier;
+        float elapsed = 0f;
+        while (elapsed < pulseDuration)
+        {
+            elapsed += Time.deltaTime;
+            float normalized = Mathf.PingPong(elapsed * 4f, 1f);
+            markerTransform.localScale = Vector3.Lerp(baseScale, pulseScale, normalized);
+            yield return null;
+        }
+
+        markerTransform.localScale = baseScale;
+    }
     private static Color GetPersonalityColor(BotPersonality personality)
     {
         return personality switch
