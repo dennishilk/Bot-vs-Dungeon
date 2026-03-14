@@ -17,6 +17,9 @@ public class LevelSelectController : MonoBehaviour
     [SerializeField] private TrapBudgetManager trapBudgetManager;
     [SerializeField] private LevelObjectiveManager objectiveManager;
     [SerializeField] private SimulationManager simulationManager;
+    [SerializeField] private CertificationManager certificationManager;
+    [SerializeField] private ProgressionManager progressionManager;
+    [SerializeField] private LevelCompleteScreen levelCompleteScreen;
 
     [Header("UI")]
     [SerializeField] private GameObject levelSelectPanel;
@@ -47,6 +50,8 @@ public class LevelSelectController : MonoBehaviour
             startLevelButton.onClick.AddListener(() => StartLevel(_selectedLevelIndex));
         }
 
+        progressionManager?.Initialize(challengeLevels.Count);
+        SyncProgressionFlags();
         RefreshLevelPreview();
     }
 
@@ -72,7 +77,13 @@ public class LevelSelectController : MonoBehaviour
             return;
         }
 
-        DungeonLevel level = challengeLevels[Mathf.Clamp(index, 0, challengeLevels.Count - 1)];
+        int clampedIndex = Mathf.Clamp(index, 0, challengeLevels.Count - 1);
+        if (progressionManager != null && !progressionManager.IsLevelUnlocked(clampedIndex))
+        {
+            return;
+        }
+
+        DungeonLevel level = challengeLevels[clampedIndex];
 
         if (simulationManager != null && simulationManager.IsSimulationRunning)
         {
@@ -96,7 +107,7 @@ public class LevelSelectController : MonoBehaviour
         trapBudgetManager?.OnArenaChanged();
         objectiveManager?.SetObjective(level.objective);
 
-        _selectedLevelIndex = index;
+        _selectedLevelIndex = clampedIndex;
         RefreshLevelPreview();
         if (levelSelectPanel != null)
         {
@@ -120,7 +131,16 @@ public class LevelSelectController : MonoBehaviour
             return;
         }
 
-        challengeLevels[Mathf.Clamp(_selectedLevelIndex, 0, challengeLevels.Count - 1)].completed = true;
+        int index = Mathf.Clamp(_selectedLevelIndex, 0, challengeLevels.Count - 1);
+        challengeLevels[index].completed = true;
+        progressionManager?.MarkLevelCompleted(index);
+        SyncProgressionFlags();
+
+        string rating = certificationManager != null && certificationManager.LastReport != null
+            ? certificationManager.LastReport.rating
+            : "Unrated";
+        int stars = CalculateStars(rating);
+        levelCompleteScreen?.Show(challengeLevels[index].levelName, "Objective Completed", rating, stars);
         RefreshLevelPreview();
     }
 
@@ -140,7 +160,47 @@ public class LevelSelectController : MonoBehaviour
         if (levelNameText != null) levelNameText.text = level.levelName;
         if (levelBudgetText != null) levelBudgetText.text = $"Budget: {level.trapBudget}";
         if (levelObjectiveText != null) levelObjectiveText.text = $"Objective: {level.objective.GetDisplayText()}";
-        if (levelCompletionText != null) levelCompletionText.text = level.completed ? "Completed ✓" : "Not Completed";
+        bool unlocked = progressionManager == null || progressionManager.IsLevelUnlocked(Mathf.Clamp(_selectedLevelIndex, 0, challengeLevels.Count - 1));
+        if (levelCompletionText != null)
+        {
+            if (!unlocked)
+            {
+                levelCompletionText.text = "Locked";
+            }
+            else
+            {
+                levelCompletionText.text = level.completed ? "Completed ✓" : "Not Completed";
+            }
+        }
+
+        if (startLevelButton != null)
+        {
+            startLevelButton.interactable = unlocked;
+        }
+    }
+
+
+    private void SyncProgressionFlags()
+    {
+        if (progressionManager == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < challengeLevels.Count; i++)
+        {
+            challengeLevels[i].completed = progressionManager.IsLevelCompleted(i);
+        }
+    }
+
+    private static int CalculateStars(string rating)
+    {
+        return rating switch
+        {
+            "Safe" => 3,
+            "Fair" => 2,
+            _ => 1
+        };
     }
 
     private void RebuildPrefabMap()

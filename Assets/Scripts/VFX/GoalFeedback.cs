@@ -8,8 +8,9 @@ public class GoalFeedback : MonoBehaviour
     [SerializeField] private float pulseSpeed = 2f;
     [SerializeField] private float baseIntensity = 1f;
     [SerializeField] private float pulseAmplitude = 0.25f;
-    [SerializeField] private float successBoost = 1.4f;
-    [SerializeField] private float successDuration = 0.5f;
+    [SerializeField] private float successBoost = 1.6f;
+    [SerializeField] private float successDuration = 0.65f;
+    [SerializeField] private float successPulseSpeedMultiplier = 1.8f;
 
     private Coroutine _boostRoutine;
 
@@ -41,10 +42,20 @@ public class GoalFeedback : MonoBehaviour
 
     private IEnumerator SuccessBoostRoutine()
     {
-        float original = baseIntensity;
+        float originalIntensity = baseIntensity;
+        float originalSpeed = pulseSpeed;
         baseIntensity *= successBoost;
-        yield return new WaitForSeconds(successDuration);
-        baseIntensity = original;
+        pulseSpeed *= successPulseSpeedMultiplier;
+
+        float elapsed = 0f;
+        while (elapsed < successDuration)
+        {
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        baseIntensity = originalIntensity;
+        pulseSpeed = originalSpeed;
         _boostRoutine = null;
     }
 }

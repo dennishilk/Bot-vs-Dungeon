@@ -13,6 +13,9 @@ public class CertificationManager : MonoBehaviour
     [SerializeField] private bool showPathHistoryByDefault = true;
     [SerializeField] private float safeHpThreshold = 50f;
     [SerializeField] private float fairHpThreshold = 30f;
+    [SerializeField] private ResultScreenController resultScreenController;
+    [SerializeField] private string dungeonName = "Untitled Dungeon";
+    [SerializeField] private float resultScreenDelay = 0.25f;
 
     private readonly List<RunResult> _runResults = new();
 
@@ -72,6 +75,7 @@ public class CertificationManager : MonoBehaviour
         _trapActivationEstimate = 0;
 
         reportPanel?.Hide();
+        resultScreenController?.Hide();
         ClearMarkersAndHistory();
         replayRecorder?.BeginCertificationSession("Certification Runs");
 
@@ -128,6 +132,12 @@ public class CertificationManager : MonoBehaviour
         DungeonReport report = DungeonReport.Build(_runResults, _trapActivationEstimate, safeHpThreshold, fairHpThreshold);
         LastReport = report;
         reportPanel?.ShowReport(report);
+        if (resultScreenDelay > 0f)
+        {
+            yield return new WaitForSecondsRealtime(resultScreenDelay);
+        }
+
+        resultScreenController?.Show(dungeonName, report, _runResults.AsReadOnly());
         OnCertificationCompleted?.Invoke(report, _runResults.AsReadOnly());
         replayRecorder?.EndCertificationSession();
         IsCertificationRunning = false;
@@ -135,6 +145,14 @@ public class CertificationManager : MonoBehaviour
         TotalRunsInCertification = 0;
     }
 
+
+    public void SetDungeonName(string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            dungeonName = value.Trim();
+        }
+    }
     private void HandleRunFinished(RunResult result)
     {
         if (!IsCertificationRunning)
