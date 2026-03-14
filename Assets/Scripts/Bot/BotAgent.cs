@@ -12,7 +12,18 @@ public class BotAgent : MonoBehaviour
     [SerializeField] private BotPersonality personality = BotPersonality.Balanced;
     [SerializeField] private float carefulDangerMultiplier = 1.8f;
     [SerializeField] private float balancedDangerMultiplier = 1f;
-    [SerializeField] private float recklessDangerMultiplier = 0.3f;
+    [SerializeField] private float recklessDangerMultiplier = 0.35f;
+    [SerializeField] private float panicDangerMultiplier = 1.1f;
+
+    [Header("Trap Proximity Avoidance")]
+    [SerializeField] private float carefulAdjacentTrapPenalty = 1.3f;
+    [SerializeField] private float balancedAdjacentTrapPenalty = 0.6f;
+    [SerializeField] private float recklessAdjacentTrapPenalty = 0.12f;
+    [SerializeField] private float panicAdjacentTrapPenalty = 0.4f;
+
+    [Header("Panic Personality")]
+    [SerializeField] private float panicTriggerHp = 35f;
+    [SerializeField] private float panicPathNoise = 1f;
 
     private ArenaManager _arenaManager;
     private SimulationManager _simulationManager;
@@ -21,11 +32,14 @@ public class BotAgent : MonoBehaviour
 
     private readonly List<Vector2Int> _path = new();
     private int _pathIndex;
+    private Vector2Int _goalTile;
+    private bool _panicTriggered;
 
     public BotState CurrentState { get; private set; } = BotState.Idle;
     public string LastDecision { get; private set; } = "Idle";
     public float LastDangerScore { get; private set; }
     public IReadOnlyList<Vector2Int> CurrentPath => _path;
+    public int TraversedPathLength => Mathf.Max(0, _pathIndex);
     public Vector2Int CurrentTilePosition => new(Mathf.RoundToInt(transform.position.x), Mathf.RoundToInt(transform.position.z));
     public Vector2Int CurrentTargetTile => _pathIndex >= 0 && _pathIndex < _path.Count ? _path[_pathIndex] : CurrentTilePosition;
 
@@ -50,20 +64,31 @@ public class BotAgent : MonoBehaviour
     {
         _arenaManager = arenaManager;
         _simulationManager = simulationManager;
+        _goalTile = goal;
+        _panicTriggered = false;
+        RecalculatePath();
+    }
 
+    private void RecalculatePath(float forcedNoise = 0f)
+    {
         Vector2Int start = CurrentTilePosition;
         _path.Clear();
-        _path.AddRange(_pathfinder.FindPath(arenaManager, start, goal, GetPersonalityDangerMultiplier()));
+
+        float noise = forcedNoise;
+        float trapPenalty = GetAdjacentTrapPenaltyMultiplier();
+        float danger = GetPersonalityDangerMultiplier();
+
+        _path.AddRange(_pathfinder.FindPath(_arenaManager, start, _goalTile, danger, trapPenalty, noise));
         _pathIndex = 0;
         CurrentState = BotState.Pathing;
         LastDangerScore = _pathfinder.LastPathDangerScore;
         LastDecision = _path.Count > 0 ? "Path calculated" : "No path found";
 
-        EventLogger.Instance?.Log($"Path calculated (len={_path.Count}, danger={LastDangerScore:0.0})");
+        EventLogger.Instance?.Log($"Path calculated ({personality}) len={_path.Count} danger={LastDangerScore:0.0}");
 
         if (_path.Count == 0)
         {
-            _health.TakeDamage(999f);
+            _health.TakeDamage(999f, DamageSource.PathFailure);
         }
     }
 
@@ -72,6 +97,13 @@ public class BotAgent : MonoBehaviour
         if (_simulationManager != null && !_simulationManager.CanBotAutoUpdate())
         {
             return;
+        }
+
+        if (personality == BotPersonality.Panic && !_panicTriggered && _health.CurrentHp <= panicTriggerHp)
+        {
+            _panicTriggered = true;
+            LastDecision = "Panic mode triggered";
+            RecalculatePath(panicPathNoise);
         }
 
         SimulateStep(Time.deltaTime);
@@ -117,7 +149,19 @@ public class BotAgent : MonoBehaviour
         {
             BotPersonality.Careful => carefulDangerMultiplier,
             BotPersonality.Reckless => recklessDangerMultiplier,
+            BotPersonality.Panic => panicDangerMultiplier,
             _ => balancedDangerMultiplier
+        };
+    }
+
+    private float GetAdjacentTrapPenaltyMultiplier()
+    {
+        return personality switch
+        {
+            BotPersonality.Careful => carefulAdjacentTrapPenalty,
+            BotPersonality.Reckless => recklessAdjacentTrapPenalty,
+            BotPersonality.Panic => panicAdjacentTrapPenalty,
+            _ => balancedAdjacentTrapPenalty
         };
     }
 }

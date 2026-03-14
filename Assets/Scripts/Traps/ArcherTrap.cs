@@ -55,7 +55,7 @@ public class ArcherTrap : TrapBase
         }
         else
         {
-            botHealth.TakeDamage(damage);
+            botHealth.TakeDamage(damage, DamageSource.ArcherTrap);
             EventLogger.Instance?.Log($"Bot took {damage:0} damage");
         }
 

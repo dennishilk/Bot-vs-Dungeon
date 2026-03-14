@@ -13,6 +13,7 @@ public class BotHealth : MonoBehaviour
     public event Action<float, float> OnBotDamaged;
 
     public float CurrentHp { get; private set; }
+    public DamageSource LastDamageSource { get; private set; } = DamageSource.Unknown;
 
     private bool _isDying;
 
@@ -21,11 +22,20 @@ public class BotHealth : MonoBehaviour
         CurrentHp = maxHp;
     }
 
-    public void TakeDamage(float amount)
+    public void TakeDamage(float amount, DamageSource source = DamageSource.Unknown)
     {
         if (CurrentHp <= 0f)
         {
             return;
+        }
+
+        if (LastDamageSource != DamageSource.Unknown && source != DamageSource.Unknown && LastDamageSource != source)
+        {
+            LastDamageSource = DamageSource.Multiple;
+        }
+        else if (source != DamageSource.Unknown)
+        {
+            LastDamageSource = source;
         }
 
         CurrentHp -= amount;

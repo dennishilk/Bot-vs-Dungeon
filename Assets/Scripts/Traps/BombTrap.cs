@@ -50,7 +50,7 @@ public class BombTrap : TrapBase
 
     public override void HandleBot(BotHealth botHealth)
     {
-        botHealth.TakeDamage(damage * 2f);
+        botHealth.TakeDamage(damage * 2f, DamageSource.BombTrap);
     }
 
     private IEnumerator ArmAndExplode(BotHealth bot)
