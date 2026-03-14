@@ -44,13 +44,26 @@ public class AnnouncerSystem : MonoBehaviour
                 StopCoroutine(_textRoutine);
             }
 
-            _textRoutine = StartCoroutine(ShowTextRoutine(line.text));
+            string subtitle = string.IsNullOrWhiteSpace(line.text) ? GetDefaultSubtitle(announcerEvent) : line.text;
+            _textRoutine = StartCoroutine(ShowTextRoutine(subtitle));
         }
 
         if (voiceSource != null && line.voiceClip != null)
         {
             voiceSource.PlayOneShot(line.voiceClip, Mathf.Clamp01(intensity));
         }
+    }
+
+    private static string GetDefaultSubtitle(AnnouncerEvent announcerEvent)
+    {
+        return announcerEvent switch
+        {
+            AnnouncerEvent.CertificationInitiated => "Certification sequence started.",
+            AnnouncerEvent.BotFatalityRecorded => "Bot fatality recorded.",
+            AnnouncerEvent.SurvivabilityThresholdAchieved => "Survivability threshold achieved.",
+            AnnouncerEvent.ComplianceRatingApproved => "Compliance rating approved.",
+            _ => "Dungeon bureau update received."
+        };
     }
 
     private AnnouncementLine FindLine(AnnouncerEvent announcerEvent)

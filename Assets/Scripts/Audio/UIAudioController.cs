@@ -17,6 +17,7 @@ public class UIAudioController : MonoBehaviour
 
     [SerializeField] private AudioSource uiSource;
     [SerializeField] private UIClips clips;
+    [SerializeField] private Vector2 pitchJitterRange = new(0.97f, 1.03f);
 
     private float _uiVolume = 1f;
 
@@ -64,6 +65,8 @@ public class UIAudioController : MonoBehaviour
             return;
         }
 
+        uiSource.pitch = Random.Range(pitchJitterRange.x, pitchJitterRange.y);
         uiSource.PlayOneShot(clip, Mathf.Clamp01(_uiVolume * intensity));
+        uiSource.pitch = 1f;
     }
 }
