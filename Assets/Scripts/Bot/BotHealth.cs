@@ -33,10 +33,12 @@ public class BotHealth : MonoBehaviour
 
         hitFlashEffect?.PlayHitFlash(transform.position + Vector3.up * 0.4f);
         OnBotDamaged?.Invoke(amount, CurrentHp);
+        EventLogger.Instance?.Log($"Bot took {amount:0} damage (HP: {CurrentHp:0})");
         AudioManager.Instance?.PlayTrapSound(SoundCue.BotHurt);
 
         if (CurrentHp <= 0f)
         {
+            EventLogger.Instance?.Log("Bot died");
             AudioManager.Instance?.PlayResultSound(SoundCue.BotDeath);
             OnBotDied?.Invoke(this);
             if (!_isDying)

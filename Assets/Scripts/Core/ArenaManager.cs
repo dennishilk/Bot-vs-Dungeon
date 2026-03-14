@@ -79,6 +79,17 @@ public class ArenaManager : MonoBehaviour
         return tile.trap.PathCostPenalty;
     }
 
+
+    public IEnumerable<Vector2Int> GetDangerTiles()
+    {
+        foreach (KeyValuePair<Vector2Int, TileEntry> pair in _grid)
+        {
+            if (pair.Value.trap != null)
+            {
+                yield return pair.Key;
+            }
+        }
+    }
     public bool TryFindTile(TileType type, out Vector2Int pos)
     {
         foreach (KeyValuePair<Vector2Int, TileEntry> pair in _grid)

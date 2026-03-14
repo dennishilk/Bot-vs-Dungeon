@@ -39,6 +39,7 @@ public class ArcherTrap : TrapBase
         BotHealth bot = hit.collider.GetComponent<BotHealth>();
         if (bot != null)
         {
+            EventLogger.Instance?.Log("Trap activated: archer");
             HandleBot(bot);
         }
     }
@@ -55,6 +56,7 @@ public class ArcherTrap : TrapBase
         else
         {
             botHealth.TakeDamage(damage);
+            EventLogger.Instance?.Log($"Bot took {damage:0} damage");
         }
 
         if (archerVisual != null)

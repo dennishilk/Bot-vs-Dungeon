@@ -34,13 +34,16 @@ public class SawTrap : TrapBase
             return;
         }
 
+        EventLogger.Instance?.Log("Bot entered saw trap");
         HandleBot(bot);
         _nextDamageTime = Time.time + tickRate;
     }
 
     public override void HandleBot(BotHealth botHealth)
     {
+        EventLogger.Instance?.Log($"Trap activated: saw ({damage:0})");
         botHealth.TakeDamage(damage);
+        EventLogger.Instance?.Log($"Bot took {damage:0} damage");
 
         if (contactSpark != null)
         {
