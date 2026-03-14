@@ -24,11 +24,21 @@ public class DungeonSerializer : MonoBehaviour
 
     public DungeonSaveData CaptureLayout(string saveName)
     {
+        long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        int usedBudget = trapBudgetManager != null ? trapBudgetManager.CurrentUsedBudget : 0;
         DungeonSaveData data = new()
         {
             saveName = saveName,
-            createdUnixTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-            trapBudgetUsed = trapBudgetManager != null ? trapBudgetManager.CurrentUsedBudget : 0
+            createdUnixTime = now,
+            trapBudgetUsed = usedBudget,
+            metadata = new DungeonMetadata
+            {
+                dungeonName = saveName,
+                creationDate = now,
+                trapBudget = usedBudget,
+                lastCertificationRating = string.Empty,
+                timesTested = 0
+            }
         };
 
         bool hasAnyTile = false;

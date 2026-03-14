@@ -52,6 +52,13 @@ public class DeathHeatmapManager : MonoBehaviour
         OnHeatmapChanged?.Invoke();
     }
 
+    public void RecordDeathAtTile(Vector2Int deathTile)
+    {
+        _deathCounts.TryGetValue(deathTile, out int existing);
+        _deathCounts[deathTile] = existing + 1;
+        OnHeatmapChanged?.Invoke();
+    }
+
     private void OnRunFinished(RunResult runResult)
     {
         if (runResult == null || runResult.survived)
@@ -60,8 +67,6 @@ public class DeathHeatmapManager : MonoBehaviour
         }
 
         Vector2Int deathTile = new(Mathf.RoundToInt(runResult.deathPosition.x), Mathf.RoundToInt(runResult.deathPosition.y));
-        _deathCounts.TryGetValue(deathTile, out int existing);
-        _deathCounts[deathTile] = existing + 1;
-        OnHeatmapChanged?.Invoke();
+        RecordDeathAtTile(deathTile);
     }
 }

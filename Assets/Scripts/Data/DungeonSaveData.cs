@@ -13,7 +13,18 @@ public class DungeonSaveData
     public SerializableVector2Int goalPosition;
     public int trapBudgetUsed;
     public long createdUnixTime;
+    public DungeonMetadata metadata = new();
     public List<PlacedObjectData> placedObjects = new();
+}
+
+[Serializable]
+public class DungeonMetadata
+{
+    public string dungeonName;
+    public long creationDate;
+    public int trapBudget;
+    public string lastCertificationRating;
+    public int timesTested;
 }
 
 [Serializable]
