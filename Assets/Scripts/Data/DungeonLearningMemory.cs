@@ -53,6 +53,11 @@ public class DungeonLearningMemory
         return tileMemory.OrderByDescending(t => t.avoidedCount).FirstOrDefault();
     }
 
+    public AdaptiveTileMemory GetMostDangerousLearnedTile()
+    {
+        return tileMemory.OrderByDescending(t => t.learnedDangerModifier).FirstOrDefault();
+    }
+
     public int LearnedDangerousTiles(float threshold)
     {
         return tileMemory.Count(t => t.learnedDangerModifier >= threshold);

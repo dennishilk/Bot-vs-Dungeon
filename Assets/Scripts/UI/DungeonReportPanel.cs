@@ -42,6 +42,9 @@ public class DungeonReportPanel : MonoBehaviour
                 $"- Learned Dangerous Tiles: {report.learnedDangerousTileCount}\n" +
                 $"- Most Lethal Learned Tile: ({report.mostLethalTile.x}, {report.mostLethalTile.y})\n" +
                 $"- Most Avoided Tile: ({report.mostAvoidedTile.x}, {report.mostAvoidedTile.y})\n" +
+                $"- Most Learned-Dangerous Tile: ({report.mostLearnedDangerousTile.x}, {report.mostLearnedDangerousTile.y})\n" +
+                $"- Fresh Success Rate: {(report.freshSuccessRate * 100f):0}%\n" +
+                $"- Adaptive Success Rate: {(report.adaptiveSuccessRate * 100f):0}%\n" +
                 $"- Adaptive Improvement: {(report.adaptiveImprovement * 100f):+0;-0;0}%";
         }
 

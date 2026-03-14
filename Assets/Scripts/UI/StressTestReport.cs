@@ -26,7 +26,9 @@ public class StressTestReport : MonoBehaviour
                 $"Most Common Cause of Death: {data.mostCommonCauseOfDeath}\n\n" +
                 $"Adaptive Mode: {(data.adaptiveModeUsed ? "On" : "Off")}\n" +
                 $"Learning Pool: {data.adaptiveLearningPool}\n" +
-                $"Learned Dangerous Tiles: {(data.learningSummary != null ? data.learningSummary.learnedDangerousTiles : 0)}";
+                $"Learned Dangerous Tiles: {(data.learningSummary != null ? data.learningSummary.learnedDangerousTiles : 0)}\n" +
+                $"Most Learned-Dangerous Tile: ({(data.learningSummary != null ? data.learningSummary.mostLearnedDangerousTile.x : 0)}, {(data.learningSummary != null ? data.learningSummary.mostLearnedDangerousTile.y : 0)})\n" +
+                $"Adaptive Improvement: {(data.learningSummary != null ? data.learningSummary.adaptiveImprovement * 100f : 0f):+0;-0;0}%";
         }
     }
 

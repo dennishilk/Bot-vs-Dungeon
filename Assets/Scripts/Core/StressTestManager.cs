@@ -28,6 +28,7 @@ public class StressTestManager : MonoBehaviour
     private readonly List<TrackedStressBot> _activeBots = new();
     private readonly Dictionary<Vector2Int, int> _localDeaths = new();
     private readonly Dictionary<string, int> _deathCauses = new();
+    private readonly HashSet<string> _learningIdsUsed = new();
 
     private int _targetBotCount;
     private int _completed;
@@ -133,6 +134,7 @@ public class StressTestManager : MonoBehaviour
             ? $"{_stressDungeonId}_bot_{index}"
             : _stressDungeonId;
 
+        _learningIdsUsed.Add(botDungeonId);
         agent.Initialize(arenaManager, null, goalPos, adaptiveLearningManager, botDungeonId, adaptiveStressMode);
         agent.ConfigureUpdateFrequency(pathUpdateFrequency);
 
@@ -230,7 +232,7 @@ public class StressTestManager : MonoBehaviour
             mostCommonCauseOfDeath = FindMostCommonCause(),
             adaptiveModeUsed = adaptiveStressMode,
             adaptiveLearningPool = stressAdaptiveLearningMode.ToString(),
-            learningSummary = adaptiveLearningManager != null ? adaptiveLearningManager.BuildSummary(_stressDungeonId) : null
+            learningSummary = adaptiveLearningManager != null ? adaptiveLearningManager.BuildAggregateSummary(_learningIdsUsed) : null
         };
 
         stressTestReport?.Show(result);
@@ -283,6 +285,7 @@ public class StressTestManager : MonoBehaviour
         _accumulatedPathLength = 0f;
         _localDeaths.Clear();
         _deathCauses.Clear();
+        _learningIdsUsed.Clear();
     }
 
     private static void ApplyBotColor(GameObject botObj, BotPersonality personality)
