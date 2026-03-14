@@ -38,7 +38,11 @@ public class DungeonReportPanel : MonoBehaviour
                 $"- Survival Rate: {report.totalSurvivals}/{report.totalRuns}\n" +
                 $"- Avg HP: {report.averageRemainingHP:0.0}\n" +
                 $"- Avg Time: {report.averageCompletionTime:0.00}s\n" +
-                $"- Avg Path Length: {report.averagePathLength:0.0}";
+                $"- Avg Path Length: {report.averagePathLength:0.0}\n" +
+                $"- Learned Dangerous Tiles: {report.learnedDangerousTileCount}\n" +
+                $"- Most Lethal Learned Tile: ({report.mostLethalTile.x}, {report.mostLethalTile.y})\n" +
+                $"- Most Avoided Tile: ({report.mostAvoidedTile.x}, {report.mostAvoidedTile.y})\n" +
+                $"- Adaptive Improvement: {(report.adaptiveImprovement * 100f):+0;-0;0}%";
         }
 
         if (ratingText != null)

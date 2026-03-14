@@ -22,7 +22,11 @@ public class BotPathfinder : MonoBehaviour
         Vector2Int goal,
         float personalityDangerMultiplier = 1f,
         float adjacentTrapPenaltyMultiplier = 0f,
-        float deterministicNoiseWeight = 0f)
+        float deterministicNoiseWeight = 0f,
+        AdaptiveLearningManager adaptiveLearningManager = null,
+        string dungeonId = null,
+        BotLearningProfile learningProfile = default,
+        bool useAdaptiveLearning = false)
     {
         PriorityQueue<Vector2Int> open = new();
         Dictionary<Vector2Int, Vector2Int> cameFrom = new();
@@ -50,9 +54,12 @@ public class BotPathfinder : MonoBehaviour
                 }
 
                 float danger = arenaManager.GetDangerCost(next) * dangerCostMultiplier * personalityDangerMultiplier;
+                float learnedDanger = useAdaptiveLearning && adaptiveLearningManager != null
+                    ? adaptiveLearningManager.GetLearnedDangerModifier(dungeonId, next, learningProfile)
+                    : 0f;
                 float adjacencyPenalty = GetAdjacentTrapCount(arenaManager, next) * adjacentTrapPenaltyMultiplier;
                 float noise = GetDeterministicTileNoise(next) * deterministicNoiseWeight;
-                float tentative = gScore[current] + 1f + danger + adjacencyPenalty + noise;
+                float tentative = gScore[current] + 1f + danger + learnedDanger + adjacencyPenalty + noise;
 
                 if (!gScore.ContainsKey(next) || tentative < gScore[next])
                 {

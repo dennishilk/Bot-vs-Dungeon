@@ -3,6 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum StressAdaptiveLearningMode
+{
+    SharedLearningPool,
+    IndividualLearning
+}
+
 public class StressTestManager : MonoBehaviour
 {
     [SerializeField] private ArenaManager arenaManager;
@@ -15,6 +21,9 @@ public class StressTestManager : MonoBehaviour
     [SerializeField] private float maxSimulationTime = 90f;
     [SerializeField] private float pathUpdateFrequency = 0.1f;
     [SerializeField] private bool colorByPersonality = true;
+    [SerializeField] private AdaptiveLearningManager adaptiveLearningManager;
+    [SerializeField] private bool adaptiveStressMode = true;
+    [SerializeField] private StressAdaptiveLearningMode stressAdaptiveLearningMode = StressAdaptiveLearningMode.SharedLearningPool;
 
     private readonly List<TrackedStressBot> _activeBots = new();
     private readonly Dictionary<Vector2Int, int> _localDeaths = new();
@@ -28,6 +37,7 @@ public class StressTestManager : MonoBehaviour
     private float _accumulatedPathLength;
     private bool _running;
     private Coroutine _runRoutine;
+    private string _stressDungeonId;
 
     public bool IsRunning => _running;
 
@@ -74,6 +84,15 @@ public class StressTestManager : MonoBehaviour
             yield break;
         }
 
+        _stressDungeonId = adaptiveLearningManager != null
+            ? adaptiveLearningManager.ComputeDungeonIdentifier(arenaManager, "Stress")
+            : "stress_runtime";
+
+        if (adaptiveStressMode && stressAdaptiveLearningMode == StressAdaptiveLearningMode.SharedLearningPool)
+        {
+            adaptiveLearningManager?.ClearCurrentDungeonLearning(_stressDungeonId);
+        }
+
         float elapsed = 0f;
         int spawned = 0;
 
@@ -109,7 +128,12 @@ public class StressTestManager : MonoBehaviour
 
         BotPersonality personality = (BotPersonality)(index % Enum.GetValues(typeof(BotPersonality)).Length);
         agent.SetPersonality(personality);
-        agent.Initialize(arenaManager, null, goalPos);
+
+        string botDungeonId = stressAdaptiveLearningMode == StressAdaptiveLearningMode.IndividualLearning
+            ? $"{_stressDungeonId}_bot_{index}"
+            : _stressDungeonId;
+
+        agent.Initialize(arenaManager, null, goalPos, adaptiveLearningManager, botDungeonId, adaptiveStressMode);
         agent.ConfigureUpdateFrequency(pathUpdateFrequency);
 
         if (colorByPersonality)
@@ -143,6 +167,12 @@ public class StressTestManager : MonoBehaviour
         _survived++;
         _accumulatedSurvivalTime += Mathf.Max(0f, Time.time - tracked.spawnTime);
         _accumulatedPathLength += tracked.agent != null ? tracked.agent.TraversedPathLength : 0f;
+
+        if (tracked.agent != null && adaptiveLearningManager != null)
+        {
+            adaptiveLearningManager.RecordRunOutcome(tracked.agent.DungeonId, true, adaptiveStressMode);
+            adaptiveLearningManager.RecordSuccessPath(tracked.agent.DungeonId, tracked.agent.TraversedTiles, tracked.agent.GetPersonality());
+        }
     }
 
     private void OnBotDied(TrackedStressBot tracked)
@@ -164,6 +194,12 @@ public class StressTestManager : MonoBehaviour
             _localDeaths.TryGetValue(deathTile, out int count);
             _localDeaths[deathTile] = count + 1;
             heatmapManager?.RecordDeathAtTile(deathTile);
+
+            if (adaptiveLearningManager != null)
+            {
+                adaptiveLearningManager.RecordRunOutcome(tracked.agent.DungeonId, false, adaptiveStressMode);
+                adaptiveLearningManager.RecordDeath(tracked.agent.DungeonId, deathTile, tracked.agent.GetPersonality());
+            }
         }
 
         string cause = tracked.health != null ? tracked.health.LastDamageSource.ToString() : "Unknown";
@@ -191,7 +227,10 @@ public class StressTestManager : MonoBehaviour
             averageSurvivalTime = _targetBotCount > 0 ? _accumulatedSurvivalTime / _targetBotCount : 0f,
             averagePathLength = _targetBotCount > 0 ? _accumulatedPathLength / _targetBotCount : 0f,
             mostLethalTile = FindMostLethalTile(),
-            mostCommonCauseOfDeath = FindMostCommonCause()
+            mostCommonCauseOfDeath = FindMostCommonCause(),
+            adaptiveModeUsed = adaptiveStressMode,
+            adaptiveLearningPool = stressAdaptiveLearningMode.ToString(),
+            learningSummary = adaptiveLearningManager != null ? adaptiveLearningManager.BuildSummary(_stressDungeonId) : null
         };
 
         stressTestReport?.Show(result);

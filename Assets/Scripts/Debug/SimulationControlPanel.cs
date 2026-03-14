@@ -20,6 +20,8 @@ public class SimulationControlPanel : MonoBehaviour
     [SerializeField] private Button resumeButton;
     [SerializeField] private Button stepButton;
     [SerializeField] private Button clearLogButton;
+    [SerializeField] private Button resetLearningButton;
+    [SerializeField] private Button resetAllLearningButton;
 
     [Header("Toggles")]
     [SerializeField] private Toggle slowMotionToggle;
@@ -28,6 +30,11 @@ public class SimulationControlPanel : MonoBehaviour
     [SerializeField] private Toggle showDangerMapToggle;
     [SerializeField] private Toggle showTileGridToggle;
     [SerializeField] private Toggle showTrapRangeToggle;
+    [SerializeField] private Toggle adaptiveModeToggle;
+    [SerializeField] private Toggle adaptiveCertificationToggle;
+    [SerializeField] private Toggle showLearnedDangerToggle;
+    [SerializeField] private Toggle showSuccessfulPathsToggle;
+    [SerializeField] private Toggle showLearningHeatmapToggle;
 
     [Header("Personality")]
     [SerializeField] private TMP_Dropdown personalityDropdown;
@@ -49,6 +56,8 @@ public class SimulationControlPanel : MonoBehaviour
         resumeButton?.onClick.AddListener(simulationManager.ResumeSimulation);
         stepButton?.onClick.AddListener(simulationManager.StepSimulation);
         clearLogButton?.onClick.AddListener(() => eventLogger?.ClearLog());
+        resetLearningButton?.onClick.AddListener(simulationManager.ResetCurrentDungeonLearning);
+        resetAllLearningButton?.onClick.AddListener(simulationManager.ResetAllLearning);
 
         slowMotionToggle?.onValueChanged.AddListener(simulationManager.ToggleSlowMotion);
 
@@ -57,6 +66,16 @@ public class SimulationControlPanel : MonoBehaviour
         showDangerMapToggle?.onValueChanged.AddListener(v => DebugPathVisualizer.ShowDangerMap = v);
         showTileGridToggle?.onValueChanged.AddListener(v => DebugPathVisualizer.ShowTileGrid = v);
         showTrapRangeToggle?.onValueChanged.AddListener(v => DebugPathVisualizer.ShowTrapRange = v);
+        adaptiveModeToggle?.onValueChanged.AddListener(simulationManager.SetAdaptiveMode);
+        adaptiveCertificationToggle?.onValueChanged.AddListener(v => certificationManager?.SetAdaptiveCertificationMode(v));
+        showLearnedDangerToggle?.onValueChanged.AddListener(v => LearningOverlayVisualizer.ShowLearnedDanger = v);
+        showSuccessfulPathsToggle?.onValueChanged.AddListener(v => LearningOverlayVisualizer.ShowSuccessfulPaths = v);
+        showLearningHeatmapToggle?.onValueChanged.AddListener(v => LearningOverlayVisualizer.ShowLearningHeatmap = v);
+
+        adaptiveModeToggle?.SetIsOnWithoutNotify(simulationManager != null && simulationManager.AdaptiveModeEnabled);
+        showLearnedDangerToggle?.SetIsOnWithoutNotify(LearningOverlayVisualizer.ShowLearnedDanger);
+        showSuccessfulPathsToggle?.SetIsOnWithoutNotify(LearningOverlayVisualizer.ShowSuccessfulPaths);
+        showLearningHeatmapToggle?.SetIsOnWithoutNotify(LearningOverlayVisualizer.ShowLearningHeatmap);
 
         if (personalityDropdown != null)
         {
